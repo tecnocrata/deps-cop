@@ -1,8 +1,27 @@
-use quick_xml::Reader;
-use quick_xml::events::Event;
 use std::path::{Path, PathBuf};
 use walkdir::WalkDir;
 use std::collections::HashMap;
+use serde::Deserialize;
+
+#[derive(Debug, Deserialize, PartialEq)]
+#[serde(rename_all = "PascalCase")]
+struct ProjectReference {
+    include: String,
+}
+
+#[derive(Debug, Deserialize, PartialEq)]
+#[serde(rename_all = "PascalCase")]
+struct ItemGroup {
+    #[serde(rename = "ProjectReference", default)]
+    project_references: Vec<ProjectReference>,
+}
+
+#[derive(Debug, Deserialize, PartialEq)]
+#[serde(rename_all = "PascalCase")]
+struct Project {
+    #[serde(default)]
+    item_group: Vec<ItemGroup>,
+}
 
 #[derive(Debug)]
 struct CsProject {
@@ -45,37 +64,39 @@ fn main() -> std::io::Result<()> {
     // Fase 2: Resolver dependencias
     for project in &projects {
         let project_path = Path::new(&project.absolute_path);
-        let mut contents = std::fs::read_to_string(project_path)?;
-        let mut reader = Reader::from_str(&contents);
-        reader.trim_text(true);
-
-        let mut buf = Vec::new();
-        let mut deps = Vec::new();
-        let project_dir = project_path.parent().unwrap();
-        println!("File: {:?}", project_path);
-        loop {
-            match reader.read_event(&mut buf) {
-                Ok(Event::Start(ref e)) if e.name() == b"ProjectReference" => {
-                    println!("ProjectReference found");
-                    if let Some(attr) = e.attributes().filter_map(|a| a.ok()).find(|a| a.key == b"Include") {
-                        println!("Include found: {:?}", attr.value);
-                        let dep_path = project_dir.join(std::str::from_utf8(&attr.value).unwrap());
-                        let canonical_dep_path = dep_path.canonicalize()?;
-                        let dep_path_str = canonical_dep_path.to_str().unwrap();
-                        if let Some(index) = path_index_map.get(dep_path_str) {
-                            deps.push(*index);
-                        }
-                    }
-                },
-                Ok(Event::Eof) => break,
-                _ => (),
+        let file = std::fs::File::open(project_path)?;
+        let csproj_data: Project = match serde_xml_rs::from_reader(file) {
+            Ok(data) => data,
+            Err(err) => {
+                eprintln!("Failed to parse csproj file: {:?}", err);
+                return Err(std::io::Error::new(std::io::ErrorKind::Other, "Failed to parse csproj file"));
             }
-            buf.clear();
+        };
+
+        let mut deps = Vec::new();
+        let project_dir = match project_path.parent() {
+            Some(parent) => parent,
+            None => return Err(std::io::Error::new(std::io::ErrorKind::Other, "Failed to get parent directory")),
+        };
+        println!("Procesando proyecto: {:?}", project_path);
+
+        for item_group in &csproj_data.item_group {
+            for project_reference in &item_group.project_references {
+                println!("Project reference: {:?}", project_reference.include);
+                let dep_path = project_dir.join(&project_reference.include);
+                println!("Dependency path: {:?}", dep_path);
+                let canonical_dep_path = dep_path.canonicalize()?;
+                let dep_path_str = canonical_dep_path.to_str().unwrap();
+                if let Some(index) = path_index_map.get(dep_path_str) {
+                    deps.push(*index);
+                    println!("Dependencia encontrada: {:?}", projects[*index]);
+                }
+            }
         }
         project_dependencies.push(deps);
     }
 
-    // Imprimir resultados
+
     println!("Proyectos encontrados:");
     for project in &projects {
         println!("{:?}", project);
