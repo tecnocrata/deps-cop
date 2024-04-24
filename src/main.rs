@@ -90,15 +90,18 @@ fn main() -> std::io::Result<()> {
         project_dependencies.push(deps);
     }
 
-    println!("Proyectos encontrados:");
-    for (i, project) in projects.iter().enumerate() {
-        println!("Índice {}: {:?}", i + 1, project);
+    // Fase 3: Generación de diagrama Mermaid
+    println!("```mermaid");
+    println!("graph TD;");
+    for (index, project) in projects.iter().enumerate() {
+        println!("    P{}[\"{}\"]", index + 1, project.name);
     }
-    println!("\nDependencias de los proyectos:");
-    for (i, deps) in project_dependencies.iter().enumerate() {
-        let dep_indices = deps.iter().map(usize::to_string).collect::<Vec<_>>().join(", ");
-        println!("Proyecto {}: {}", i + 1, dep_indices);
+    for (index, deps) in project_dependencies.iter().enumerate() {
+        for dep in deps {
+            println!("    P{} --> P{}", index + 1, dep);
+        }
     }
+    println!("```");
 
     Ok(())
 }
