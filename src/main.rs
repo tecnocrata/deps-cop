@@ -2,6 +2,8 @@ use std::path::{Path, PathBuf};
 use walkdir::WalkDir;
 use std::collections::HashMap;
 use serde::Deserialize;
+use std::fs::File;
+use std::io::BufReader;
 
 #[derive(Debug, Deserialize, PartialEq)]
 #[serde(rename_all = "PascalCase")]
@@ -64,38 +66,29 @@ fn main() -> std::io::Result<()> {
     // Fase 2: Resolver dependencias
     for project in &projects {
         let project_path = Path::new(&project.absolute_path);
-        let file = std::fs::File::open(project_path)?;
-        let csproj_data: Project = match serde_xml_rs::from_reader(file) {
-            Ok(data) => data,
-            Err(err) => {
-                eprintln!("Failed to parse csproj file: {:?}", err);
-                return Err(std::io::Error::new(std::io::ErrorKind::Other, "Failed to parse csproj file"));
-            }
-        };
+        let file = File::open(project_path)?;
+        let file_reader = BufReader::new(file);
+        let csproj_data: Project = serde_xml_rs::from_reader(file_reader).unwrap();
 
         let mut deps = Vec::new();
-        let project_dir = match project_path.parent() {
-            Some(parent) => parent,
-            None => return Err(std::io::Error::new(std::io::ErrorKind::Other, "Failed to get parent directory")),
-        };
-        println!("Procesando proyecto: {:?}", project_path);
+        let project_dir = project_path.parent().unwrap();
 
         for item_group in &csproj_data.item_group {
             for project_reference in &item_group.project_references {
-                println!("Project reference: {:?}", project_reference.include);
-                let dep_path = project_dir.join(&project_reference.include);
-                println!("Dependency path: {:?}", dep_path);
-                let canonical_dep_path = dep_path.canonicalize()?;
+                let normalized_path = project_reference.include.replace("\\", "/");
+                let dep_path = project_dir.join(normalized_path);
+                let canonical_dep_path = match dep_path.canonicalize() {
+                    Ok(path) => path,
+                    Err(_) => continue,  // Ignorar si no puede ser canonicalizado
+                };
                 let dep_path_str = canonical_dep_path.to_str().unwrap();
                 if let Some(index) = path_index_map.get(dep_path_str) {
-                    deps.push(*index);
-                    println!("Dependencia encontrada: {:?}", projects[*index]);
+                    deps.push(*index+1);
                 }
             }
         }
         project_dependencies.push(deps);
     }
-
 
     println!("Proyectos encontrados:");
     for project in &projects {
