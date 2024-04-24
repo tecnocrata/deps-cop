@@ -83,11 +83,21 @@ fn main() -> std::io::Result<()> {
                 };
                 let dep_path_str = canonical_dep_path.to_str().unwrap();
                 if let Some(index) = path_index_map.get(dep_path_str) {
-                    deps.push(*index+1);
+                    deps.push(*index + 1); // Index adjustment for 1-based index
                 }
             }
         }
         project_dependencies.push(deps);
+    }
+
+    println!("Proyectos encontrados:");
+    for (i, project) in projects.iter().enumerate() {
+        println!("Índice {}: {:?}", i + 1, project);
+    }
+    println!("\nDependencias de los proyectos:");
+    for (i, deps) in project_dependencies.iter().enumerate() {
+        let dep_indices = deps.iter().map(usize::to_string).collect::<Vec<_>>().join(", ");
+        println!("Proyecto {}: {}", i + 1, dep_indices);
     }
 
     // Fase 3: Generación de diagrama Mermaid
@@ -102,6 +112,18 @@ fn main() -> std::io::Result<()> {
         }
     }
     println!("```");
+
+    // Phase 4: Generate Graphviz diagram
+    println!("digraph G {{");
+    for (index, project) in projects.iter().enumerate() {
+        println!("    P{} [label=\"{}\"]", index + 1, project.name);
+    }
+    for (index, deps) in project_dependencies.iter().enumerate() {
+        for dep in deps {
+            println!("    P{} -> P{}", index + 1, dep);
+        }
+    }
+    println!("}}");
 
     Ok(())
 }
