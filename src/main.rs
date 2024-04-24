@@ -91,8 +91,8 @@ fn main() -> std::io::Result<()> {
     }
 
     println!("Proyectos encontrados:");
-    for project in &projects {
-        println!("{:?}", project);
+    for (i, project) in projects.iter().enumerate() {
+        println!("Índice {}: {:?}", i + 1, project);
     }
     println!("\nDependencias de los proyectos:");
     for (i, deps) in project_dependencies.iter().enumerate() {
