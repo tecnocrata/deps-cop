@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 use walkdir::WalkDir;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use serde::Deserialize;
 use std::fs::File;
 use std::io::BufReader;
@@ -37,7 +37,8 @@ fn main() -> std::io::Result<()> {
     let mut project_dependencies: Vec<Vec<usize>> = Vec::new();
     let mut path_index_map: HashMap<String, usize> = HashMap::new();
 
-    let root_path = Path::new("/home/enrique/sites/csharp-architecture");
+    // let root_path = Path::new("/home/enrique/sites/csharp-architecture");
+    let root_path = Path::new("/home/enrique/sites/attendant");
 
     // Fase 1: Recolectar todos los archivos .csproj
     for entry in WalkDir::new(root_path) {
@@ -83,7 +84,7 @@ fn main() -> std::io::Result<()> {
                 };
                 let dep_path_str = canonical_dep_path.to_str().unwrap();
                 if let Some(index) = path_index_map.get(dep_path_str) {
-                    deps.push(*index + 1); // Index adjustment for 1-based index
+                    deps.push(*index ); // Index adjustment for 1-based index
                 }
             }
         }
@@ -97,7 +98,7 @@ fn main() -> std::io::Result<()> {
     println!("\nDependencias de los proyectos:");
     for (i, deps) in project_dependencies.iter().enumerate() {
         let dep_indices = deps.iter().map(usize::to_string).collect::<Vec<_>>().join(", ");
-        println!("Proyecto {}: {}", i + 1, dep_indices);
+        println!("Proyecto {}: {}", i, dep_indices);
     }
 
     // Fase 3: Generación de diagrama Mermaid
@@ -120,10 +121,66 @@ fn main() -> std::io::Result<()> {
     }
     for (index, deps) in project_dependencies.iter().enumerate() {
         for dep in deps {
-            println!("    P{} -> P{}", index + 1, dep);
+            println!("    P{} -> P{}", index + 1, dep+1);
         }
     }
     println!("}}");
+    
+    // Detectar ciclos en las dependencias
+    fn dfs(
+        node: usize,
+        stack: &mut Vec<usize>,
+        visiting: &mut HashSet<usize>,
+        visited: &mut HashSet<usize>,
+        deps: &[Vec<usize>],
+        projects: &[CsProject],
+    ) -> bool {
+        if visiting.contains(&node) {
+            // Ciclo detectado, imprimir ciclo
+            let cycle_start_index = stack.iter().position(|&x| x == node).unwrap();
+            println!("Ciclo detectado en las dependencias:");
+            for &index in &stack[cycle_start_index..] {
+                print!("{} -> ", projects[index].name);
+            }
+            println!("{}", projects[node].name); // Completar el ciclo
+            return true;
+        }
+    
+        if visited.contains(&node) && stack.contains(&node) {
+            return false; // Este nodo ya ha sido explorado en la pila actual
+        }
+    
+        visiting.insert(node);
+        stack.push(node);
+    
+        for &next in &deps[node] {
+            if dfs(next, stack, visiting, visited, deps, projects) {
+                return true;
+            }
+        }
+    
+        stack.pop();
+        visiting.remove(&node);
+        visited.insert(node);
+        false
+    }
+    
+    // Invocar dfs en el loop principal
+    let mut has_cycle = false;
+    for i in 0..projects.len() {
+        let mut visiting = HashSet::new();
+        let mut visited = HashSet::new();
+        let mut stack = Vec::new();
+        if dfs(i, &mut stack, &mut visiting, &mut visited, &project_dependencies, &projects) {
+            println!("Ciclo iniciado desde el proyecto: {}", projects[i].name);
+            has_cycle = true;
+        }
+    }
+    if !has_cycle {
+        println!("No se detectaron dependencias circulares.");
+    }
+    
+    
 
     Ok(())
 }
