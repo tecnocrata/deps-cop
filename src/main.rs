@@ -4,6 +4,7 @@ use std::io::{BufReader, Error};
 use std::path::{Path, PathBuf};
 use serde::Deserialize;
 use walkdir::WalkDir;
+use clap::{App, Arg};
 
 #[derive(Debug, Deserialize, PartialEq)]
 #[serde(rename_all = "PascalCase")]
@@ -32,11 +33,23 @@ struct CsProject {
     name: String,
 }
 
-/// Main entry point of the application
-fn main() -> Result<(), Error> {
-    //let root_path = Path::new("/home/enrique/sites/csharp-architecture");
-    let root_path = Path::new("/home/enrique/sites/attendant");
-    let projects = collect_projects(root_path)?;
+// Main entry point of the application
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let matches = App::new("Project Dependency Analyzer")
+        .version("1.0")
+        .author("Enrique Ortuño <")
+        .about("Analyzes project dependencies from .csproj files")
+        .arg(Arg::new("folder")
+             .long("folder")
+             .value_name("PATH")
+             .help("Sets a custom folder path")
+             .takes_value(true))
+        .get_matches();
+
+    let root_path = matches.value_of("folder")
+        .map_or_else(|| PathBuf::from("."), PathBuf::from); // Use the current directory if no folder is provided
+
+    let projects = collect_projects(&root_path)?;
     let project_dependencies = resolve_dependencies(&projects)?;
 
     display_project_information(&projects, &project_dependencies);
@@ -107,7 +120,7 @@ fn resolve_dependencies(projects: &[CsProject]) -> Result<Vec<Vec<usize>>, Error
 fn display_project_information(projects: &[CsProject], project_dependencies: &[Vec<usize>]) {
     println!("Found projects:");
     for (i, project) in projects.iter().enumerate() {
-        println!("Index {}: {:?}", i + 1, project);
+        println!("{}: {:?}", i + 1, project);
     }
 
     println!("\nProject dependencies:");

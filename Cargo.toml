@@ -1,9 +1,10 @@
 [package]
-name = "_01"
+name = "deps_cop"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 
 [dependencies]
+clap = "3.2.10"
 walkdir = "2.3"
 quick-xml = "0.22"
 serde = { version = "1.0", features = ["derive"] }
