@@ -97,7 +97,7 @@ jobs:
             files: |
               downloaded-artifacts/deps_cop-linux-${{ github.ref_name }}.tar.gz/*
               downloaded-artifacts/deps_cop-macos-${{ github.ref_name }}/*
-              downloaded-artifacts/deps_cop-windows-${{ github.ref_name }}/*
+              downloaded-artifacts/deps_cop-windows-${{ github.ref_name }}.zip/*
             tag_name: ${{ env.VERSION }}
             name: Release ${{ env.VERSION }}
             body: 'Release version ${{ env.VERSION }}'
