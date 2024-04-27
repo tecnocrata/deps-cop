@@ -68,9 +68,14 @@ jobs:
     - uses: actions/download-artifact@v2
       with:
         path: artifacts
+    - name: Extract version from tag
+      run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
     - name: Create Release
       uses: softprops/action-gh-release@v1
       with:
         files: artifacts/**
+        tag_name: ${{ env.VERSION }}
+        name: Release ${{ env.VERSION }}
+        body: 'Release version ${{ env.VERSION }}'
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
