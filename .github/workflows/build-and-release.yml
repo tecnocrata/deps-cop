@@ -94,7 +94,10 @@ jobs:
         - name: Create Release
           uses: softprops/action-gh-release@v2
           with:
-            files: downloaded-artifacts/*
+            files: |
+              downloaded-artifacts/deps_cop-linux-v0.1.11.tar.gz/*
+              downloaded-artifacts/deps_cop-macos-v0.1.11/*
+              downloaded-artifacts/deps_cop-windows-v0.1.11.zip/*
             tag_name: ${{ env.VERSION }}
             name: Release ${{ env.VERSION }}
             body: 'Release version ${{ env.VERSION }}'
