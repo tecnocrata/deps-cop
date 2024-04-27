@@ -85,8 +85,8 @@ jobs:
       uses: softprops/action-gh-release@v1
       with:
         files: artifacts/**
-        tag_name: ${{ github.ref }}
-        name: Release ${{ github.ref }}
-        body: 'Release version ${{ github.ref }}'
+        tag_name: ${{ env.VERSION }}
+        name: Release ${{ env.VERSION }}
+        body: 'Release version ${{ env.VERSION }}'
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
