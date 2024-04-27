@@ -18,11 +18,13 @@ jobs:
         override: true
     - name: Build
       run: cargo build --release --target x86_64-unknown-linux-gnu
+    - name: Compress Linux Binary
+      run: tar -czvf deps_cop-linux-${{ github.ref_name }}.tar.gz -C target/x86_64-unknown-linux-gnu/release deps_cop
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
       with:
-        name: deps_cop-linux
-        path: target/x86_64-unknown-linux-gnu/release/deps_cop
+        name: deps_cop-linux-${{ github.ref_name }}.tar.gz
+        path: deps_cop-linux-${{ github.ref_name }}.tar.gz
 
   build-windows:
     name: Build on Windows
@@ -36,11 +38,13 @@ jobs:
         override: true
     - name: Build
       run: cargo build --release --target x86_64-pc-windows-gnu
+    - name: Compress Windows Binary
+      run: 7z a deps_cop-windows-${{ github.ref_name }}.zip ./target/x86_64-pc-windows-gnu/release/deps_cop.exe
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
       with:
-        name: deps_cop-windows
-        path: target/x86_64-pc-windows-gnu/release/deps_cop.exe
+        name: deps_cop-windows-${{ github.ref_name }}.zip
+        path: deps_cop-windows-${{ github.ref_name }}.zip
 
   build-macos:
     name: Build on macOS for Intel and Apple Silicon
@@ -63,13 +67,17 @@ jobs:
       run: cargo build --release --target x86_64-apple-darwin
     - name: Build for ARM
       run: cargo build --release --target aarch64-apple-darwin
+    - name: Compress macOS Binaries
+      run: |
+        zip -j deps_cop-macos-x86_64-${{ github.ref_name }}.zip ./target/x86_64-apple-darwin/release/deps_cop
+        zip -j deps_cop-macos-arm64-${{ github.ref_name }}.zip ./target/aarch64-apple-darwin/release/deps_cop
     - name: Upload Artifacts
       uses: actions/upload-artifact@v2
       with:
-        name: deps_cop-macos
+        name: deps_cop-macos-${{ github.ref_name }}
         path: |
-          target/x86_64-apple-darwin/release/deps_cop
-          target/aarch64-apple-darwin/release/deps_cop
+          deps_cop-macos-x86_64-${{ github.ref_name }}.zip
+          deps_cop-macos-arm64-${{ github.ref_name }}.zip
 
   release:
       name: Release
@@ -77,35 +85,16 @@ jobs:
       runs-on: ubuntu-latest
       steps:
         - uses: actions/checkout@v2
-
         - name: Extract version from tag
           run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
-
-        - name: Download Linux artifact
+        - name: Download All Artifacts
           uses: actions/download-artifact@v2
           with:
-            name: deps_cop-linux
-            path: artifacts/deps_cop-linux
-
-        - name: Download Windows artifact
-          uses: actions/download-artifact@v2
-          with:
-            name: deps_cop-windows
-            path: artifacts/deps_cop-windows
-
-        - name: Download macOS artifact
-          uses: actions/download-artifact@v2
-          with:
-            name: deps_cop-macos
-            path: artifacts/deps_cop-macos
-
+            path: downloaded-artifacts
         - name: Create Release
           uses: softprops/action-gh-release@v2
           with:
-            files: |
-              artifacts/deps_cop-linux/*
-              artifacts/deps_cop-windows/*
-              artifacts/deps_cop-macos/*
+            files: downloaded-artifacts/*
             tag_name: ${{ env.VERSION }}
             name: Release ${{ env.VERSION }}
             body: 'Release version ${{ env.VERSION }}'
