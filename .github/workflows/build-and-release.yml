@@ -39,7 +39,7 @@ jobs:
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
       with:
-        name: deps_cop-windows.exe
+        name: deps_cop-windows
         path: target/x86_64-pc-windows-gnu/release/deps_cop.exe
 
   build-macos:
@@ -72,6 +72,7 @@ jobs:
           target/aarch64-apple-darwin/release/deps_cop
 
   release:
+      name: Release
       needs: [build-linux, build-windows, build-macos]
       runs-on: ubuntu-latest
       steps:
@@ -84,24 +85,27 @@ jobs:
           uses: actions/download-artifact@v2
           with:
             name: deps_cop-linux
+            path: artifacts/deps_cop-linux
 
         - name: Download Windows artifact
           uses: actions/download-artifact@v2
           with:
-            name: deps_cop-windows.exe
+            name: deps_cop-windows
+            path: artifacts/deps_cop-windows
 
         - name: Download macOS artifact
           uses: actions/download-artifact@v2
           with:
             name: deps_cop-macos
+            path: artifacts/deps_cop-macos
 
         - name: Create Release
           uses: softprops/action-gh-release@v2
           with:
             files: |
-              deps_cop-linux/deps_cop
-              deps_cop-windows.exe/deps_cop.exe
-              deps_cop-macos/deps_cop
+              artifacts/deps_cop-linux/*
+              artifacts/deps_cop-windows/*
+              artifacts/deps_cop-macos/*
             tag_name: ${{ env.VERSION }}
             name: Release ${{ env.VERSION }}
             body: 'Release version ${{ env.VERSION }}'
