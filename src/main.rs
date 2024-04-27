@@ -123,7 +123,7 @@ fn collect_projects(root_path: &Path) -> Result<Vec<CsProject>, Error> {
 /// Resolves dependencies of each project
 fn resolve_dependencies(projects: &[CsProject]) -> Result<Vec<Vec<usize>>, Error> {
     let mut project_dependencies = Vec::new();
-    let mut path_index_map: HashMap<String, usize> = projects.iter().enumerate()
+    let path_index_map: HashMap<String, usize> = projects.iter().enumerate()
         .map(|(index, project)| (project.absolute_path.clone(), index))
         .collect();
 
