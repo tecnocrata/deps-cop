@@ -1,7 +1,7 @@
 [package]
 name = "deps_cop"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
 
 [dependencies]
 clap = "3.2.10"
