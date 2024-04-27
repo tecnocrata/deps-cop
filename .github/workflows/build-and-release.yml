@@ -72,21 +72,38 @@ jobs:
           target/aarch64-apple-darwin/release/deps_cop
 
   release:
-    needs: [build-linux, build-windows, build-macos]
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    - uses: actions/download-artifact@v2
-      with:
-        path: artifacts
-    - name: Extract version from tag
-      run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
-    - name: Create Release
-      uses: softprops/action-gh-release@v1
-      with:
-        files: artifacts/**
-        tag_name: ${{ env.VERSION }}
-        name: Release ${{ env.VERSION }}
-        body: 'Release version ${{ env.VERSION }}'
-    #   env:
-    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      needs: [build-linux, build-windows, build-macos]
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v2
+
+        - name: Extract version from tag
+          run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+
+        - name: Download Linux artifact
+          uses: actions/download-artifact@v2
+          with:
+            name: deps_cop-linux
+
+        - name: Download Windows artifact
+          uses: actions/download-artifact@v2
+          with:
+            name: deps_cop-windows.exe
+
+        - name: Download macOS artifact
+          uses: actions/download-artifact@v2
+          with:
+            name: deps_cop-macos
+
+        - name: Create Release
+          uses: softprops/action-gh-release@v1
+          with:
+            files: |
+              deps_cop-linux/deps_cop
+              deps_cop-windows.exe/deps_cop.exe
+              deps_cop-macos/deps_cop
+            tag_name: ${{ env.VERSION }}
+            name: Release ${{ env.VERSION }}
+            body: 'Release version ${{ env.VERSION }}'
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
