@@ -2,6 +2,7 @@ use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::{BufReader, Error};
 use std::path::{Path, PathBuf};
+use path_slash::PathExt;
 use serde::Deserialize;
 use walkdir::WalkDir;
 use clap::{App, Arg};
@@ -140,7 +141,14 @@ fn resolve_dependencies(projects: &[CsProject]) -> Result<Vec<Vec<usize>>, Error
 
         for item_group in &csproj_data.item_group {
             for project_reference in &item_group.project_references {
-                let normalized_path = project_reference.include.replace("\\", "/");
+                let normalized_path = if cfg!(target_os = "windows") {
+                    Path::new(&project_reference.include).to_slash().unwrap()
+                } else {
+                    project_reference.include.replace("\\", "/")
+                };
+                // let normalized_path = project_reference.include.replace(&MAIN_SEPARATOR.to_string(), "/");
+                // let normalized_path = Path::new(&project_reference.include).to_slash().unwrap();
+                println!("project reference: {} AND normalized path: {}", project_reference.include, normalized_path);
                 let dep_path = project_dir.join(normalized_path);
                 if let Ok(canonical_dep_path) = dep_path.canonicalize() {
                     let dep_path_str = canonical_dep_path.to_str().unwrap();
