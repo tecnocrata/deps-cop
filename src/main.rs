@@ -134,7 +134,13 @@ fn resolve_dependencies(projects: &[CsProject]) -> Result<Vec<Vec<usize>>, Error
         let project_path = Path::new(&project.absolute_path);
         let file = File::open(project_path)?;
         let file_reader = BufReader::new(file);
-        let csproj_data: Project = serde_xml_rs::from_reader(file_reader).unwrap();
+        let csproj_data: Project = match serde_xml_rs::from_reader(file_reader) {
+            Ok(data) => data,
+            Err(err) => {
+                eprintln!("Failed to parse .csproj file: {}", project.absolute_path);
+                return Err(std::io::Error::new(std::io::ErrorKind::Other, err.to_string()));
+            }
+        };
 
         let mut deps = Vec::new();
         let project_dir = project_path.parent().unwrap();
@@ -174,7 +180,7 @@ fn display_project_information(projects: &[CsProject], project_dependencies: &[V
     println!("\nProject dependencies:");
     for (i, deps) in project_dependencies.iter().enumerate() {
         let dep_indices = deps.iter().map(usize::to_string).collect::<Vec<_>>().join(", ");
-        println!("Project {}: {}", i + 1, dep_indices);
+        println!("Project {}: {}", i, dep_indices);
     }
 }
 
