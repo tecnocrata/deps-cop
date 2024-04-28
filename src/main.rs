@@ -23,8 +23,8 @@ struct ItemGroup {
 #[derive(Debug, Deserialize, PartialEq)]
 #[serde(rename_all = "PascalCase")]
 struct Project {
-    #[serde(default)]
-    item_group: Vec<ItemGroup>,
+    #[serde(rename = "ItemGroup", default)]
+    item_groups: Vec<ItemGroup>,
 }
 
 #[derive(Debug)]
@@ -136,25 +136,19 @@ fn resolve_dependencies(projects: &[CsProject]) -> Result<Vec<Vec<usize>>, Error
         let file_reader = BufReader::new(file);
         let csproj_data: Project = match serde_xml_rs::from_reader(file_reader) {
             Ok(data) => data,
-            Err(err) => {
-                eprintln!("Failed to parse .csproj file: {}", project.absolute_path);
-                return Err(std::io::Error::new(std::io::ErrorKind::Other, err.to_string()));
-            }
+            Err(err) => return Err(std::io::Error::new(std::io::ErrorKind::Other, err.to_string())),
         };
 
         let mut deps = Vec::new();
         let project_dir = project_path.parent().unwrap();
 
-        for item_group in &csproj_data.item_group {
+        for item_group in &csproj_data.item_groups {
             for project_reference in &item_group.project_references {
                 let normalized_path = if cfg!(target_os = "windows") {
                     Path::new(&project_reference.include).to_slash().unwrap()
                 } else {
                     project_reference.include.replace("\\", "/")
                 };
-                // let normalized_path = project_reference.include.replace(&MAIN_SEPARATOR.to_string(), "/");
-                // let normalized_path = Path::new(&project_reference.include).to_slash().unwrap();
-                println!("project reference: {} AND normalized path: {}", project_reference.include, normalized_path);
                 let dep_path = project_dir.join(normalized_path);
                 if let Ok(canonical_dep_path) = dep_path.canonicalize() {
                     let dep_path_str = canonical_dep_path.to_str().unwrap();
@@ -174,7 +168,7 @@ fn resolve_dependencies(projects: &[CsProject]) -> Result<Vec<Vec<usize>>, Error
 fn display_project_information(projects: &[CsProject], project_dependencies: &[Vec<usize>]) {
     println!("Found projects:");
     for (i, project) in projects.iter().enumerate() {
-        println!("{}: {:?}", i + 1, project);
+        println!("{}: {:?}", i, project);
     }
 
     println!("\nProject dependencies:");
