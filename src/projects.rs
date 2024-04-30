@@ -1,7 +1,7 @@
 use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::{BufReader, Error, Read};
-use std::path::{Path};
+use std::path::Path;
 use path_slash::PathExt;
 use serde::Deserialize;
 use walkdir::WalkDir;
@@ -65,10 +65,10 @@ impl ProjectDependencies for ProjectDependencyManager {
                     }
                 };
                 
-                if project.tools_version.is_some() {
-                    println!("Skipping '{}' due to incompatible csproj file.", path.display());
-                    continue; // Skip this file if ToolsVersion is present
-                }
+                // if project.tools_version.is_some() {
+                //     println!("Skipping '{}' due to incompatible csproj file.", path.display());
+                //     continue; // Skip this file if ToolsVersion is present
+                // }
 
                 // If ToolsVersion is not present, process the file
                 let relative_path = match path.strip_prefix(root_path) {
