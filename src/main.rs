@@ -136,7 +136,10 @@ fn resolve_dependencies(projects: &[CsProject]) -> Result<Vec<Vec<usize>>, Error
         let file_reader = BufReader::new(file);
         let csproj_data: Project = match serde_xml_rs::from_reader(file_reader) {
             Ok(data) => data,
-            Err(err) => return Err(std::io::Error::new(std::io::ErrorKind::Other, err.to_string())),
+            Err(err) => {
+                eprintln!("Failed to parse .csproj file: {}", project.absolute_path);
+                return Err(std::io::Error::new(std::io::ErrorKind::Other, err.to_string()));
+            }
         };
 
         let mut deps = Vec::new();
