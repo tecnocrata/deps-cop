@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 use std::fs::File;
-use std::io::{BufReader, Error};
+use std::io::{BufReader, Error, Read};
 use std::path::{Path, PathBuf};
 use path_slash::PathExt;
 use serde::Deserialize;
@@ -23,6 +23,8 @@ struct ItemGroup {
 #[derive(Debug, Deserialize, PartialEq)]
 #[serde(rename_all = "PascalCase")]
 struct Project {
+    #[serde(rename = "ToolsVersion", default)]
+    tools_version: Option<String>,
     #[serde(rename = "ItemGroup", default)]
     item_groups: Vec<ItemGroup>,
 }
@@ -109,6 +111,25 @@ fn collect_projects(root_path: &Path) -> Result<Vec<CsProject>, Error> {
         let entry = entry?;
         let path = entry.path();
         if path.extension().map_or(false, |e| e == "csproj") {
+            let mut file = File::open(path)?;
+            let mut contents = String::new();
+            file.read_to_string(&mut contents)?;
+
+            // Parse XML to check for ToolsVersion
+            let project: Project = match serde_xml_rs::from_str(&contents) {
+                Ok(proj) => proj,
+                Err(err) => {
+                    eprintln!("Failed to parse .csproj file, possible incompatible file: {}, error: {}", path.display(), err);
+                    continue; // Skip this file if parsing fails
+                }
+            };
+            
+            if project.tools_version.is_some() {
+                println!("Skipping '{}' due to incompatible csproj file.", path.display());
+                continue; // Skip this file if ToolsVersion is present
+            }
+
+            // If ToolsVersion is not present, process the file
             let relative_path = match path.strip_prefix(root_path) {
                 Ok(stripped_path) => stripped_path.to_str().unwrap().to_string(),
                 Err(_) => return Err(std::io::Error::new(std::io::ErrorKind::Other, "Failed to strip prefix")),
