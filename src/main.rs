@@ -86,6 +86,7 @@ fn generate_html_output(nodes: &[Node], node_dependencies: &[Vec<usize>], path: 
     writeln!(file, "        .secondary-color {{ background-color: #718096; }}")?;
     writeln!(file, "        .accent-color {{ background-color: #e2e8f0; }}")?;
     writeln!(file, "    </style>")?;
+    generate_library_includes(&mut file, format)?;
     writeln!(file, "</head>")?;
     writeln!(file, "<body class=\"main-color text-accent-color\">")?;
     writeln!(file, "    <header class=\"text-center p-4 secondary-color\">")?;
@@ -95,9 +96,9 @@ fn generate_html_output(nodes: &[Node], node_dependencies: &[Vec<usize>], path: 
     writeln!(file, "    <section class=\"flex justify-center items-center p-4 h-screen\">")?;
     writeln!(file, "        <div class=\"w-full\">")?;
     if format == "graphviz" {
-        generate_graphviz_diagram_html(&mut file, nodes, node_dependencies)?;
+        generate_body_content_graphviz(&mut file, nodes, node_dependencies)?;
     } else if format == "sigma" {
-        generate_sigma_html(&mut file)?;
+        generate_body_content_sigma(&mut file)?;
     }
     writeln!(file, "        </div>")?;
     writeln!(file, "    </section>")?;
@@ -106,15 +107,30 @@ fn generate_html_output(nodes: &[Node], node_dependencies: &[Vec<usize>], path: 
     writeln!(file, "        <p>Everything was generated using Rust.</p>")?;
     writeln!(file, "        <img src=\"https://www.rust-lang.org/logos/rust-logo-blk.svg\" alt=\"Rust Logo\" class=\"h-8 mx-auto\">")?;
     writeln!(file, "    </footer>")?;
+    generate_script_code(&mut file, format, nodes, node_dependencies)?;
     writeln!(file, "</body>")?;
     writeln!(file, "</html>")?;
     
     Ok(())
 }
 
-fn generate_graphviz_diagram_html(file: &mut File, nodes: &[Node], node_dependencies: &[Vec<usize>]) -> Result<(), Box<dyn std::error::Error>> {
-    writeln!(file, "<div class=\"bg-accent-color h-full flex justify-center items-center\">")?;
-    writeln!(file, "<p>digraph G {{")?;
+fn generate_library_includes(file: &mut File, format: &str) -> Result<(), Box<dyn std::error::Error>> {
+    if format == "graphviz" {
+        writeln!(file, "<script src=\"https://cdnjs.cloudflare.com/ajax/libs/viz.js/2.1.2/viz.js\"></script>")?;
+        writeln!(file, "<script src=\"https://cdnjs.cloudflare.com/ajax/libs/viz.js/2.1.2/full.render.js\" integrity=\"sha512-1zKK2bG3QY2JaUPpfHZDUMe3dwBwFdCDwXQ01GrKSd+/l0hqPbF+aak66zYPUZtn+o2JYi1mjXAqy5mW04v3iA==\" crossorigin=\"anonymous\" referrerpolicy=\"no-referrer\"></script>")?;
+    } else
+    if format == "sigma" {
+        writeln!(file, "<script src=\"https://cdnjs.cloudflare.com/ajax/libs/sigma.js/2.0.0/sigma.min.js\"></script>")?;
+    }
+    Ok(())
+}
+
+fn generate_script_code(file: &mut File, format: &str, nodes: &[Node], node_dependencies: &[Vec<usize>]) -> Result<(), Box<dyn std::error::Error>> {
+    if format == "graphviz" {
+        writeln!(file, "<script>")?;
+        writeln!(file, "    var viz = new Viz();")?;
+        writeln!(file, "    var graphvizData = `")?;
+        writeln!(file, "digraph G {{")?;
     for (index, node) in nodes.iter().enumerate() {
         writeln!(file, "    P{} [label=\"{}\"]", index + 1, node.name)?;
     }
@@ -123,12 +139,36 @@ fn generate_graphviz_diagram_html(file: &mut File, nodes: &[Node], node_dependen
             writeln!(file, "    P{} -> P{}", index + 1, dep + 1)?;
         }
     }
-    writeln!(file, "}}</p>")?;
-    writeln!(file, "</div>")?;
+        writeln!(file, "}}`;")?;
+
+        writeln!(file, "    viz.renderSVGElement(graphvizData)")?;
+        writeln!(file, "            .then(function(element) {{")?;
+        writeln!(file, "                document.getElementById('graph').appendChild(element);")?;
+        writeln!(file, "    }})")?;
+        writeln!(file, "    .catch(error => {{")?;
+        writeln!(file, "     console.error('Error rendering graph:', error);")?;
+        writeln!(file, "    }});")?;
+        writeln!(file, "</script>")?;
+    } else
+    if format == "sigma" {
+        writeln!(file, "<script>")?;
+        writeln!(file, "    let graph = document.querySelector('p').textContent;")?;
+        writeln!(file, "    let s = new sigma({{")?;
+        writeln!(file, "        container: 'graph-container',")?;
+        writeln!(file, "        graph: graph,")?;
+        writeln!(file, "    }});")?;
+        writeln!(file, "</script>")?;
+    }
     Ok(())
 }
 
-fn generate_sigma_html(file: &mut File) -> Result<(), Box<dyn std::error::Error>> {
+
+fn generate_body_content_graphviz(file: &mut File, nodes: &[Node], node_dependencies: &[Vec<usize>]) -> Result<(), Box<dyn std::error::Error>> {
+    writeln!(file, "<div id=\"graph\"></div>")?;
+    Ok(())
+}
+
+fn generate_body_content_sigma(file: &mut File) -> Result<(), Box<dyn std::error::Error>> {
     // Implementación de Sigma va aquí. Actualmente está vacío según instrucciones.
     writeln!(file, "<div class=\"bg-accent-color h-full flex justify-center items-center\">")?;
     writeln!(file, "<p>Placeholder for Sigma directed graph.</p>")?;
