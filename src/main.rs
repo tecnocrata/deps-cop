@@ -42,7 +42,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .map_or_else(|| PathBuf::from("."), PathBuf::from);
 
     let projects = ProjectDependencyManager::collect_projects(&root_path)?;
-    let project_dependencies = ProjectDependencyManager::resolve_dependencies(&projects)?;
+    let project_dependencies = ProjectDependencyManager::find_dependencies(&projects)?;
 
     if matches.is_present("list") {
         display_project_information(&projects, &project_dependencies);

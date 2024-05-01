@@ -30,8 +30,8 @@ pub struct Project {
 
 #[derive(Debug)]
 pub struct Node {
-    relative_path: String,
-    absolute_path: String,
+    // relative_path: String,
+    id: String, // Unique identifier per node
     pub name: String,
 }
 
@@ -39,7 +39,7 @@ pub struct ProjectDependencyManager;
 
 pub trait ProjectDependencies {
     fn collect_projects(root_path: &Path) -> Result<Vec<Node>, Error>;
-    fn resolve_dependencies(projects: &[Node]) -> Result<Vec<Vec<usize>>, Error>;
+    fn find_dependencies(projects: &[Node]) -> Result<Vec<Vec<usize>>, Error>;
     fn detect_cycles(projects: &[Node], project_dependencies: &[Vec<usize>]);
 }
 
@@ -71,14 +71,14 @@ impl ProjectDependencies for ProjectDependencyManager {
                 // }
 
                 // If ToolsVersion is not present, process the file
-                let relative_path = match path.strip_prefix(root_path) {
-                    Ok(stripped_path) => stripped_path.to_str().unwrap().to_string(),
-                    Err(_) => return Err(std::io::Error::new(std::io::ErrorKind::Other, "Failed to strip prefix")),
-                };
+                // let relative_path = match path.strip_prefix(root_path) {
+                //     Ok(stripped_path) => stripped_path.to_str().unwrap().to_string(),
+                //     Err(_) => return Err(std::io::Error::new(std::io::ErrorKind::Other, "Failed to strip prefix")),
+                // };
                 let absolute_path = path.to_str().unwrap().to_string();
                 let name = path.file_name().unwrap().to_str().unwrap().to_string();
 
-                projects.push(Node { relative_path, absolute_path, name });
+                projects.push(Node { id: absolute_path, name });
             }
         }
 
@@ -86,20 +86,20 @@ impl ProjectDependencies for ProjectDependencyManager {
     }
 
     /// Resolves dependencies of each project
-    fn resolve_dependencies(projects: &[Node]) -> Result<Vec<Vec<usize>>, Error> {
+    fn find_dependencies(projects: &[Node]) -> Result<Vec<Vec<usize>>, Error> {
         let mut project_dependencies = Vec::new();
         let path_index_map: HashMap<String, usize> = projects.iter().enumerate()
-            .map(|(index, project)| (project.absolute_path.clone(), index))
+            .map(|(index, project)| (project.id.clone(), index))
             .collect();
 
         for project in projects {
-            let project_path = Path::new(&project.absolute_path);
+            let project_path = Path::new(&project.id); // The id is the absolute path
             let file = File::open(project_path)?;
             let file_reader = BufReader::new(file);
             let csproj_data: Project = match serde_xml_rs::from_reader(file_reader) {
                 Ok(data) => data,
                 Err(err) => {
-                    eprintln!("Failed to parse .csproj file: {}", project.absolute_path);
+                    eprintln!("Failed to parse .csproj file: {}", project.id);
                     return Err(std::io::Error::new(std::io::ErrorKind::Other, err.to_string()));
                 }
             };
