@@ -29,7 +29,7 @@ pub struct Project {
 }
 
 #[derive(Debug)]
-pub struct CsProject {
+pub struct Node {
     relative_path: String,
     absolute_path: String,
     pub name: String,
@@ -38,14 +38,14 @@ pub struct CsProject {
 pub struct ProjectDependencyManager;
 
 pub trait ProjectDependencies {
-    fn collect_projects(root_path: &Path) -> Result<Vec<CsProject>, Error>;
-    fn resolve_dependencies(projects: &[CsProject]) -> Result<Vec<Vec<usize>>, Error>;
-    fn detect_cycles(projects: &[CsProject], project_dependencies: &[Vec<usize>]);
+    fn collect_projects(root_path: &Path) -> Result<Vec<Node>, Error>;
+    fn resolve_dependencies(projects: &[Node]) -> Result<Vec<Vec<usize>>, Error>;
+    fn detect_cycles(projects: &[Node], project_dependencies: &[Vec<usize>]);
 }
 
 impl ProjectDependencies for ProjectDependencyManager {
     /// Collects CsProject data from .csproj files found under the given root path
-    fn collect_projects(root_path: &Path) -> Result<Vec<CsProject>, Error> {
+    fn collect_projects(root_path: &Path) -> Result<Vec<Node>, Error> {
         let mut projects = Vec::new();
 
         for entry in WalkDir::new(root_path) {
@@ -78,7 +78,7 @@ impl ProjectDependencies for ProjectDependencyManager {
                 let absolute_path = path.to_str().unwrap().to_string();
                 let name = path.file_name().unwrap().to_str().unwrap().to_string();
 
-                projects.push(CsProject { relative_path, absolute_path, name });
+                projects.push(Node { relative_path, absolute_path, name });
             }
         }
 
@@ -86,7 +86,7 @@ impl ProjectDependencies for ProjectDependencyManager {
     }
 
     /// Resolves dependencies of each project
-    fn resolve_dependencies(projects: &[CsProject]) -> Result<Vec<Vec<usize>>, Error> {
+    fn resolve_dependencies(projects: &[Node]) -> Result<Vec<Vec<usize>>, Error> {
         let mut project_dependencies = Vec::new();
         let path_index_map: HashMap<String, usize> = projects.iter().enumerate()
             .map(|(index, project)| (project.absolute_path.clone(), index))
@@ -129,14 +129,14 @@ impl ProjectDependencies for ProjectDependencyManager {
         Ok(project_dependencies)
     }
 
-    fn detect_cycles(projects: &[CsProject], project_dependencies: &[Vec<usize>]) {
+    fn detect_cycles(nodes: &[Node], node_dependencies: &[Vec<usize>]) {
         let mut has_cycle = false;
-        for i in 0..projects.len() {
+        for i in 0..nodes.len() {
             let mut visiting = HashSet::new();
             let mut visited = HashSet::new();
             let mut stack = Vec::new();
-            if dfs(i, &mut stack, &mut visiting, &mut visited, project_dependencies, projects) {
-                println!("Cycle initiated from project: {}", projects[i].name);
+            if dfs(i, &mut stack, &mut visiting, &mut visited, node_dependencies, nodes) {
+                println!("Cycle initiated from node: {}", nodes[i].name);
                 has_cycle = true;
             }
         }
@@ -153,16 +153,16 @@ fn dfs(
     visiting: &mut HashSet<usize>,
     visited: &mut HashSet<usize>,
     deps: &[Vec<usize>],
-    projects: &[CsProject],
+    nodes: &[Node],
 ) -> bool {
     if visiting.contains(&node) {
         // Cycle detected, print the cycle
         let cycle_start_index = stack.iter().position(|&x| x == node).unwrap();
-        println!("Cycle detected in dependencies starting at '{}':", projects[node].name);
+        println!("Cycle detected in dependencies starting at '{}':", nodes[node].name);
         for &index in &stack[cycle_start_index..] {
-            print!("{} -> ", projects[index].name);
+            print!("{} -> ", nodes[index].name);
         }
-        println!("{}", projects[node].name); // Complete the cycle
+        println!("{}", nodes[node].name); // Complete the cycle
         return true;
     }
 
@@ -174,7 +174,7 @@ fn dfs(
     stack.push(node);
 
     for &next in &deps[node] {
-        if dfs(next, stack, visiting, visited, deps, projects) {
+        if dfs(next, stack, visiting, visited, deps, nodes) {
             return true;
         }
     }

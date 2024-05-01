@@ -2,7 +2,7 @@ use std::path::PathBuf;
 use clap::{App, Arg};
 
 mod projects;
-use projects::CsProject;
+use projects::Node;
 use projects::{ProjectDependencyManager, ProjectDependencies};
 
 
@@ -67,7 +67,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-fn generate_html_output(projects: &[CsProject], dependencies: &[Vec<usize>], path: &str, format: &str) -> Result<(), Box<dyn std::error::Error>> {
+fn generate_html_output(nodes: &[Node], node_dependencies: &[Vec<usize>], path: &str, format: &str) -> Result<(), Box<dyn std::error::Error>> {
     println!("Generating HTML output at '{}' using format '{}'", path, format);
     // Here you would implement the actual logic to generate and save the HTML output.
     Ok(())
@@ -75,27 +75,27 @@ fn generate_html_output(projects: &[CsProject], dependencies: &[Vec<usize>], pat
 
 
 /// Displays basic information about projects and their dependencies
-fn display_project_information(projects: &[CsProject], project_dependencies: &[Vec<usize>]) {
+fn display_project_information(projects: &[Node], node_dependencies: &[Vec<usize>]) {
     println!("Found projects:");
     for (i, project) in projects.iter().enumerate() {
         println!("{}: {:?}", i, project);
     }
 
     println!("\nProject dependencies:");
-    for (i, deps) in project_dependencies.iter().enumerate() {
+    for (i, deps) in node_dependencies.iter().enumerate() {
         let dep_indices = deps.iter().map(usize::to_string).collect::<Vec<_>>().join(", ");
         println!("Project {}: {}", i, dep_indices);
     }
 }
 
 /// Generates a Mermaid diagram based on project dependencies
-fn generate_mermaid_diagram(projects: &[CsProject], project_dependencies: &[Vec<usize>]) {
+fn generate_mermaid_diagram(nodes: &[Node], node_dependencies: &[Vec<usize>]) {
     println!("```mermaid");
     println!("graph TD;");
-    for (index, project) in projects.iter().enumerate() {
+    for (index, project) in nodes.iter().enumerate() {
         println!("    P{}[\"{}\"]", index + 1, project.name);
     }
-    for (index, deps) in project_dependencies.iter().enumerate() {
+    for (index, deps) in node_dependencies.iter().enumerate() {
         for dep in deps {
             println!("    P{} --> P{}", index + 1, dep + 1);
         }
@@ -104,12 +104,12 @@ fn generate_mermaid_diagram(projects: &[CsProject], project_dependencies: &[Vec<
 }
 
 /// Generates a Graphviz diagram based on project dependencies
-fn generate_graphviz_diagram(projects: &[CsProject], project_dependencies: &[Vec<usize>]) {
+fn generate_graphviz_diagram(nodes: &[Node], node_dependencies: &[Vec<usize>]) {
     println!("digraph G {{");
-    for (index, project) in projects.iter().enumerate() {
+    for (index, project) in nodes.iter().enumerate() {
         println!("    P{} [label=\"{}\"]", index + 1, project.name);
     }
-    for (index, deps) in project_dependencies.iter().enumerate() {
+    for (index, deps) in node_dependencies.iter().enumerate() {
         for dep in deps {
             println!("    P{} -> P{}", index + 1, dep + 1);
         }
