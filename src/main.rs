@@ -81,16 +81,16 @@ fn generate_html_output(nodes: &[Node], node_dependencies: &[Vec<usize>], path: 
     writeln!(file, "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">")?;
     writeln!(file, "    <title>Dependencies Analyzer</title>")?;
     writeln!(file, "    <link href=\"https://cdn.jsdelivr.net/npm/tailwindcss@3.1.0/dist/tailwind.min.css\" rel=\"stylesheet\">")?;
-    writeln!(file, "    <style>")?;
-    writeln!(file, "        .main-color {{ background-color: #4a5568; }}")?;
-    writeln!(file, "        .secondary-color {{ background-color: #718096; }}")?;
-    writeln!(file, "        .accent-color {{ background-color: #e2e8f0; }}")?;
-    writeln!(file, "    </style>")?;
-    generate_library_includes(&mut file, format)?;
+    // writeln!(file, "    <style>")?;
+    // writeln!(file, "        .main-color {{ background-color: #4a5568; }}")?;
+    // writeln!(file, "        .secondary-color {{ background-color: #718096; }}")?;
+    // writeln!(file, "        .accent-color {{ background-color: #e2e8f0; }}")?;
+    // writeln!(file, "    </style>")?;
+    generate_header_content(&mut file, format)?;
     writeln!(file, "</head>")?;
-    writeln!(file, "<body class=\"main-color text-accent-color\">")?;
+    writeln!(file, "<body class=\"accent-color text-gray-800\">")?;
     writeln!(file, "    <header class=\"text-center p-4 secondary-color\">")?;
-    writeln!(file, "        <h1>Dependencies Cop</h1>")?;
+    writeln!(file, "        <h1>Dependencies Analyzer</h1>")?;
     writeln!(file, "        <p>This page was generated automatically.</p>")?;
     writeln!(file, "    </header>")?;
     writeln!(file, "    <section class=\"flex justify-center items-center p-4 h-screen\">")?;
@@ -110,8 +110,16 @@ fn generate_html_output(nodes: &[Node], node_dependencies: &[Vec<usize>], path: 
     Ok(())
 }
 
-fn generate_library_includes(file: &mut File, format: &str) -> Result<(), Box<dyn std::error::Error>> {
+fn generate_header_content(file: &mut File, format: &str) -> Result<(), Box<dyn std::error::Error>> {
     if format == "graphviz" {
+        writeln!(file, "    <style>")?;
+        writeln!(file, "        .main-color {{ background-color: #4a5568; }}")?;
+        writeln!(file, "        .secondary-color {{ background-color: #718096; }}")?;
+        writeln!(file, "        .accent-color {{ background-color: #ffffff; color: #333; }}")?;
+        writeln!(file, "        #graph-container {{")?;
+        writeln!(file, "            width: 100%; height: 80vh; overflow: auto; border: 1px solid #ccc;")?;
+        writeln!(file, "        }}")?;
+        writeln!(file, "    </style>")?;
         writeln!(file, "<script src=\"https://cdnjs.cloudflare.com/ajax/libs/viz.js/2.1.2/viz.js\"></script>")?;
         writeln!(file, "<script src=\"https://cdnjs.cloudflare.com/ajax/libs/viz.js/2.1.2/full.render.js\" integrity=\"sha512-1zKK2bG3QY2JaUPpfHZDUMe3dwBwFdCDwXQ01GrKSd+/l0hqPbF+aak66zYPUZtn+o2JYi1mjXAqy5mW04v3iA==\" crossorigin=\"anonymous\" referrerpolicy=\"no-referrer\"></script>")?;
     } else
@@ -167,7 +175,9 @@ fn generate_body_content(file: &mut File, format: &str, nodes: &[Node], node_dep
     Ok(())
 }
 fn generate_body_content_graphviz(file: &mut File, nodes: &[Node], node_dependencies: &[Vec<usize>]) -> Result<(), Box<dyn std::error::Error>> {
-    writeln!(file, "<div id=\"graph\"></div>")?;
+    writeln!(file, "            <div id=\"graph-container\">")?;
+    writeln!(file, "                <div id=\"graph\"></div>")?;
+    writeln!(file, "            </div>")?;
     Ok(())
 }
 
