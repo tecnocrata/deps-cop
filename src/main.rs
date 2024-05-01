@@ -1,5 +1,7 @@
 use std::path::PathBuf;
 use clap::{App, Arg};
+use std::fs::File;
+use std::io::{Write, Error};
 
 mod projects;
 use projects::Node;
@@ -69,10 +71,70 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 fn generate_html_output(nodes: &[Node], node_dependencies: &[Vec<usize>], path: &str, format: &str) -> Result<(), Box<dyn std::error::Error>> {
     println!("Generating HTML output at '{}' using format '{}'", path, format);
-    // Here you would implement the actual logic to generate and save the HTML output.
+
+    let mut file = File::create(path)?;
+    
+    writeln!(file, "<!DOCTYPE html>")?;
+    writeln!(file, "<html lang=\"en\">")?;
+    writeln!(file, "<head>")?;
+    writeln!(file, "    <meta charset=\"UTF-8\">")?;
+    writeln!(file, "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">")?;
+    writeln!(file, "    <title>Dependencies Cop</title>")?;
+    writeln!(file, "    <link href=\"https://cdn.jsdelivr.net/npm/tailwindcss@3.1.0/dist/tailwind.min.css\" rel=\"stylesheet\">")?;
+    writeln!(file, "    <style>")?;
+    writeln!(file, "        .main-color {{ background-color: #4a5568; }}")?;
+    writeln!(file, "        .secondary-color {{ background-color: #718096; }}")?;
+    writeln!(file, "        .accent-color {{ background-color: #e2e8f0; }}")?;
+    writeln!(file, "    </style>")?;
+    writeln!(file, "</head>")?;
+    writeln!(file, "<body class=\"main-color text-accent-color\">")?;
+    writeln!(file, "    <header class=\"text-center p-4 secondary-color\">")?;
+    writeln!(file, "        <h1>Dependencies Cop</h1>")?;
+    writeln!(file, "        <p>This page was generated automatically.</p>")?;
+    writeln!(file, "    </header>")?;
+    writeln!(file, "    <section class=\"flex justify-center items-center p-4 h-screen\">")?;
+    writeln!(file, "        <div class=\"w-full\">")?;
+    if format == "graphviz" {
+        generate_graphviz_diagram_html(&mut file, nodes, node_dependencies)?;
+    } else if format == "sigma" {
+        generate_sigma_html(&mut file)?;
+    }
+    writeln!(file, "        </div>")?;
+    writeln!(file, "    </section>")?;
+    writeln!(file, "    <footer class=\"text-center p-4 secondary-color\">")?;
+    writeln!(file, "        <p>Generated on: <script>document.write(new Date().toLocaleString());</script></p>")?;
+    writeln!(file, "        <p>Everything was generated using Rust.</p>")?;
+    writeln!(file, "        <img src=\"https://www.rust-lang.org/logos/rust-logo-blk.svg\" alt=\"Rust Logo\" class=\"h-8 mx-auto\">")?;
+    writeln!(file, "    </footer>")?;
+    writeln!(file, "</body>")?;
+    writeln!(file, "</html>")?;
+    
     Ok(())
 }
 
+fn generate_graphviz_diagram_html(file: &mut File, nodes: &[Node], node_dependencies: &[Vec<usize>]) -> Result<(), Box<dyn std::error::Error>> {
+    writeln!(file, "<div class=\"bg-accent-color h-full flex justify-center items-center\">")?;
+    writeln!(file, "<p>digraph G {{")?;
+    for (index, node) in nodes.iter().enumerate() {
+        writeln!(file, "    P{} [label=\"{}\"]", index + 1, node.name)?;
+    }
+    for (index, deps) in node_dependencies.iter().enumerate() {
+        for dep in deps {
+            writeln!(file, "    P{} -> P{}", index + 1, dep + 1)?;
+        }
+    }
+    writeln!(file, "}}</p>")?;
+    writeln!(file, "</div>")?;
+    Ok(())
+}
+
+fn generate_sigma_html(file: &mut File) -> Result<(), Box<dyn std::error::Error>> {
+    // Implementación de Sigma va aquí. Actualmente está vacío según instrucciones.
+    writeln!(file, "<div class=\"bg-accent-color h-full flex justify-center items-center\">")?;
+    writeln!(file, "<p>Placeholder for Sigma directed graph.</p>")?;
+    writeln!(file, "</div>")?;
+    Ok(())
+}
 
 /// Displays basic information about projects and their dependencies
 fn display_project_information(projects: &[Node], node_dependencies: &[Vec<usize>]) {

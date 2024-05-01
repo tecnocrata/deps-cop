@@ -33,6 +33,7 @@ pub struct Node {
     // relative_path: String,
     id: String, // Unique identifier per node
     pub name: String,
+    // type: String
 }
 
 pub struct ProjectDependencyManager;
