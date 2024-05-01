@@ -1,4 +1,4 @@
-# deps_cop - Project Dependency Analyzer
+# deps_cop - Dependency Analyzer
 
 `deps_cop` is a Rust-based command-line tool designed to analyze and report on the dependencies between C# project files (`*.csproj`). It offers insights into project structures, visualizes dependencies via diagrams, and detects circular dependencies to help maintain clean and manageable project architectures.
 
