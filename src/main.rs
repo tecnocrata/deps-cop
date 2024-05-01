@@ -79,7 +79,7 @@ fn generate_html_output(nodes: &[Node], node_dependencies: &[Vec<usize>], path: 
     writeln!(file, "<head>")?;
     writeln!(file, "    <meta charset=\"UTF-8\">")?;
     writeln!(file, "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">")?;
-    writeln!(file, "    <title>Dependencies Cop</title>")?;
+    writeln!(file, "    <title>Dependencies Analyzer</title>")?;
     writeln!(file, "    <link href=\"https://cdn.jsdelivr.net/npm/tailwindcss@3.1.0/dist/tailwind.min.css\" rel=\"stylesheet\">")?;
     writeln!(file, "    <style>")?;
     writeln!(file, "        .main-color {{ background-color: #4a5568; }}")?;
@@ -95,11 +95,7 @@ fn generate_html_output(nodes: &[Node], node_dependencies: &[Vec<usize>], path: 
     writeln!(file, "    </header>")?;
     writeln!(file, "    <section class=\"flex justify-center items-center p-4 h-screen\">")?;
     writeln!(file, "        <div class=\"w-full\">")?;
-    if format == "graphviz" {
-        generate_body_content_graphviz(&mut file, nodes, node_dependencies)?;
-    } else if format == "sigma" {
-        generate_body_content_sigma(&mut file)?;
-    }
+    generate_body_content(&mut file, format, nodes, node_dependencies)?;
     writeln!(file, "        </div>")?;
     writeln!(file, "    </section>")?;
     writeln!(file, "    <footer class=\"text-center p-4 secondary-color\">")?;
@@ -162,7 +158,14 @@ fn generate_script_code(file: &mut File, format: &str, nodes: &[Node], node_depe
     Ok(())
 }
 
-
+fn generate_body_content(file: &mut File, format: &str, nodes: &[Node], node_dependencies: &[Vec<usize>]) -> Result<(), Box<dyn std::error::Error>> {
+    if format == "graphviz" {
+        generate_body_content_graphviz(file, nodes, node_dependencies)?;
+    } else if format == "sigma" {
+        generate_body_content_sigma(file)?;
+    }
+    Ok(())
+}
 fn generate_body_content_graphviz(file: &mut File, nodes: &[Node], node_dependencies: &[Vec<usize>]) -> Result<(), Box<dyn std::error::Error>> {
     writeln!(file, "<div id=\"graph\"></div>")?;
     Ok(())
