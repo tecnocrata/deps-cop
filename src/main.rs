@@ -1,7 +1,8 @@
 use std::path::PathBuf;
 use clap::{App, Arg};
 use std::fs::File;
-use std::io::{Write, Error};
+use std::io::Write;
+use chrono::Local;
 
 mod projects;
 use projects::Node;
@@ -12,7 +13,6 @@ use projects::{ProjectDependencyManager, ProjectDependencies};
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let matches = App::new("Project Dependency Analyzer")
         .version("1.0")
-        .author("Enrique")
         .about("Analyzes dependencies from C# project files for now")
         .arg(Arg::new("folder")
              .long("folder")
@@ -73,6 +73,7 @@ fn generate_html_output(nodes: &[Node], node_dependencies: &[Vec<usize>], path: 
     println!("Generating HTML output at '{}' using format '{}'", path, format);
 
     let mut file = File::create(path)?;
+    let now = Local::now();
     
     writeln!(file, "<!DOCTYPE html>")?;
     writeln!(file, "<html lang=\"en\">")?;
@@ -81,11 +82,12 @@ fn generate_html_output(nodes: &[Node], node_dependencies: &[Vec<usize>], path: 
     writeln!(file, "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">")?;
     writeln!(file, "    <title>Dependencies Analyzer</title>")?;
     writeln!(file, "    <link href=\"https://cdn.jsdelivr.net/npm/tailwindcss@3.1.0/dist/tailwind.min.css\" rel=\"stylesheet\">")?;
-    // writeln!(file, "    <style>")?;
+    writeln!(file, "    <style>")?;
+    writeln!(file, "        .rust-logo {{ height: 50px; }}")?;
     // writeln!(file, "        .main-color {{ background-color: #4a5568; }}")?;
     // writeln!(file, "        .secondary-color {{ background-color: #718096; }}")?;
     // writeln!(file, "        .accent-color {{ background-color: #e2e8f0; }}")?;
-    // writeln!(file, "    </style>")?;
+    writeln!(file, "    </style>")?;
     generate_header_content(&mut file, format)?;
     writeln!(file, "</head>")?;
     writeln!(file, "<body class=\"accent-color text-gray-800\">")?;
@@ -99,9 +101,9 @@ fn generate_html_output(nodes: &[Node], node_dependencies: &[Vec<usize>], path: 
     writeln!(file, "        </div>")?;
     writeln!(file, "    </section>")?;
     writeln!(file, "    <footer class=\"text-center p-4 secondary-color\">")?;
-    writeln!(file, "        <p>Generated on: <script>document.write(new Date().toLocaleString());</script></p>")?;
+    writeln!(file, "        <p>Generated on: {}</p>", now.format("%Y-%m-%dT%H:%M:%S%:z"))?;
     writeln!(file, "        <p>Everything was generated using Rust.</p>")?;
-    writeln!(file, "        <img src=\"https://www.rust-lang.org/logos/rust-logo-blk.svg\" alt=\"Rust Logo\" class=\"h-8 mx-auto\">")?;
+    writeln!(file, "        <img src=\"https://www.rust-lang.org/logos/rust-logo-blk.svg\" alt=\"Rust Logo\" class=\"rust-logo mx-auto\">")?;
     writeln!(file, "    </footer>")?;
     generate_script_code(&mut file, format, nodes, node_dependencies)?;
     writeln!(file, "</body>")?;
@@ -113,13 +115,13 @@ fn generate_html_output(nodes: &[Node], node_dependencies: &[Vec<usize>], path: 
 fn generate_header_content(file: &mut File, format: &str) -> Result<(), Box<dyn std::error::Error>> {
     if format == "graphviz" {
         writeln!(file, "    <style>")?;
-        writeln!(file, "        .main-color {{ background-color: #4a5568; }}")?;
-        writeln!(file, "        .secondary-color {{ background-color: #718096; }}")?;
-        writeln!(file, "        .accent-color {{ background-color: #ffffff; color: #333; }}")?;
-        writeln!(file, "        #graph-container {{")?;
-        writeln!(file, "            width: 100%; height: 80vh; overflow: auto; border: 1px solid #ccc;")?;
-        writeln!(file, "        }}")?;
-        writeln!(file, "    </style>")?;
+    writeln!(file, "        .main-color {{ background-color: #1a202c; }}")?; // Color de fondo más oscuro
+    writeln!(file, "        .secondary-color {{ background-color: #4a5568; }}")?; // Un gris más suave
+    writeln!(file, "        .accent-color {{ background-color: #ffffff; color: #2d3748; }}")?; // Texto más oscuro sobre fondo blanco
+    writeln!(file, "        #graph-container {{")?;
+    writeln!(file, "            width: 100%; height: 80vh; overflow: auto; border: 1px solid #ccc;")?;
+    writeln!(file, "        }}")?;
+    writeln!(file, "    </style>")?;
         writeln!(file, "<script src=\"https://cdnjs.cloudflare.com/ajax/libs/viz.js/2.1.2/viz.js\"></script>")?;
         writeln!(file, "<script src=\"https://cdnjs.cloudflare.com/ajax/libs/viz.js/2.1.2/full.render.js\" integrity=\"sha512-1zKK2bG3QY2JaUPpfHZDUMe3dwBwFdCDwXQ01GrKSd+/l0hqPbF+aak66zYPUZtn+o2JYi1mjXAqy5mW04v3iA==\" crossorigin=\"anonymous\" referrerpolicy=\"no-referrer\"></script>")?;
     } else
@@ -148,6 +150,9 @@ fn generate_script_code(file: &mut File, format: &str, nodes: &[Node], node_depe
         writeln!(file, "    viz.renderSVGElement(graphvizData)")?;
         writeln!(file, "            .then(function(element) {{")?;
         writeln!(file, "                document.getElementById('graph').appendChild(element);")?;
+        writeln!(file, "                var svg = document.querySelector('#graph svg');")?;
+        writeln!(file, "                svg.style.width = '100%';")?;
+        writeln!(file, "                svg.style.height = 'auto';")?;
         writeln!(file, "    }})")?;
         writeln!(file, "    .catch(error => {{")?;
         writeln!(file, "     console.error('Error rendering graph:', error);")?;
