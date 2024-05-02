@@ -81,30 +81,31 @@ fn generate_html_output(nodes: &[Node], node_dependencies: &[Vec<usize>], path: 
     writeln!(file, "    <meta charset=\"UTF-8\">")?;
     writeln!(file, "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">")?;
     writeln!(file, "    <title>Dependencies Analyzer</title>")?;
-    writeln!(file, "    <link href=\"https://cdn.jsdelivr.net/npm/tailwindcss@3.1.0/dist/tailwind.min.css\" rel=\"stylesheet\">")?;
+    writeln!(file, "    <link rel=\"stylesheet\" href=\"https://unpkg.com/tailwindcss@2.2.19/dist/tailwind.min.css\"/>")?;
+    writeln!(file, "    <link href=\"https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,700\" rel=\"stylesheet\">")?;
     writeln!(file, "    <style>")?;
+    writeln!(file, "        body {{ font-family: 'Source Sans Pro', sans-serif; color: #4a5568; }}")?;
+    writeln!(file, "        .header {{ background-color: #667eea; color: #fafafa; padding: 20px; text-align: center; }}")?;
+    writeln!(file, "        .footer {{ background-color: #718096; color: #ffffff; text-align: center; padding: 10px; }}")?;
     writeln!(file, "        .rust-logo {{ height: 50px; }}")?;
-    // writeln!(file, "        .main-color {{ background-color: #4a5568; }}")?;
-    // writeln!(file, "        .secondary-color {{ background-color: #718096; }}")?;
-    // writeln!(file, "        .accent-color {{ background-color: #e2e8f0; }}")?;
     writeln!(file, "    </style>")?;
     generate_header_content(&mut file, format)?;
     writeln!(file, "</head>")?;
-    writeln!(file, "<body class=\"accent-color text-gray-800\">")?;
-    writeln!(file, "    <header class=\"text-center p-4 secondary-color\">")?;
+    writeln!(file, "<body>")?;
+    writeln!(file, "    <div class=\"header\">")?;
     writeln!(file, "        <h1>Dependencies Analyzer</h1>")?;
     writeln!(file, "        <p>This page was generated automatically.</p>")?;
-    writeln!(file, "    </header>")?;
+    writeln!(file, "    </div>")?;
     writeln!(file, "    <section class=\"flex justify-center items-center p-4 h-screen\">")?;
     writeln!(file, "        <div class=\"w-full\">")?;
     generate_body_content(&mut file, format, nodes, node_dependencies)?;
     writeln!(file, "        </div>")?;
     writeln!(file, "    </section>")?;
-    writeln!(file, "    <footer class=\"text-center p-4 secondary-color\">")?;
-    writeln!(file, "        <p>Generated on: {}</p>", now.format("%Y-%m-%dT%H:%M:%S%:z"))?;
+    writeln!(file, "    <div class=\"footer\">")?;
+    writeln!(file, "        <p>Generated on: {}</p>", now.format("%Y-%m-%dT%H:%M:%SZ"))?;
     writeln!(file, "        <p>Everything was generated using Rust.</p>")?;
     writeln!(file, "        <img src=\"https://www.rust-lang.org/logos/rust-logo-blk.svg\" alt=\"Rust Logo\" class=\"rust-logo mx-auto\">")?;
-    writeln!(file, "    </footer>")?;
+    writeln!(file, "    </div>")?;
     generate_script_code(&mut file, format, nodes, node_dependencies)?;
     writeln!(file, "</body>")?;
     writeln!(file, "</html>")?;
@@ -115,13 +116,8 @@ fn generate_html_output(nodes: &[Node], node_dependencies: &[Vec<usize>], path: 
 fn generate_header_content(file: &mut File, format: &str) -> Result<(), Box<dyn std::error::Error>> {
     if format == "graphviz" {
         writeln!(file, "    <style>")?;
-    writeln!(file, "        .main-color {{ background-color: #1a202c; }}")?; // Color de fondo más oscuro
-    writeln!(file, "        .secondary-color {{ background-color: #4a5568; }}")?; // Un gris más suave
-    writeln!(file, "        .accent-color {{ background-color: #ffffff; color: #2d3748; }}")?; // Texto más oscuro sobre fondo blanco
-    writeln!(file, "        #graph-container {{")?;
-    writeln!(file, "            width: 100%; height: 80vh; overflow: auto; border: 1px solid #ccc;")?;
-    writeln!(file, "        }}")?;
-    writeln!(file, "    </style>")?;
+        writeln!(file, "        #graph-container {{ width: 100%; height: 80vh; overflow: auto; border: 1px solid #ccc; }}")?;
+        writeln!(file, "    </style>")?;
         writeln!(file, "<script src=\"https://cdnjs.cloudflare.com/ajax/libs/viz.js/2.1.2/viz.js\"></script>")?;
         writeln!(file, "<script src=\"https://cdnjs.cloudflare.com/ajax/libs/viz.js/2.1.2/full.render.js\" integrity=\"sha512-1zKK2bG3QY2JaUPpfHZDUMe3dwBwFdCDwXQ01GrKSd+/l0hqPbF+aak66zYPUZtn+o2JYi1mjXAqy5mW04v3iA==\" crossorigin=\"anonymous\" referrerpolicy=\"no-referrer\"></script>")?;
     } else
