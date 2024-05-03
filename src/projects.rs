@@ -58,7 +58,7 @@ impl ProjectDependencies for ProjectDependencyManager {
                 file.read_to_string(&mut contents)?;
 
                 // Parse XML to check for ToolsVersion
-                let project: Project = match serde_xml_rs::from_str(&contents) {
+                let _project: Project = match serde_xml_rs::from_str(&contents) {
                     Ok(proj) => proj,
                     Err(err) => {
                         eprintln!("Failed to parse .csproj file, possible incompatible file: {}, error: {}", path.display(), err);

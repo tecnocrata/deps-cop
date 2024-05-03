@@ -19,12 +19,12 @@ jobs:
     - name: Build
       run: cargo build --release --target x86_64-unknown-linux-gnu
     - name: Compress Linux Binary
-      run: tar -czvf deps_cop-linux-${{ github.ref_name }}.tar.gz -C target/x86_64-unknown-linux-gnu/release deps_cop
+      run: tar -czvf depscop-linux-${{ github.ref_name }}.tar.gz -C target/x86_64-unknown-linux-gnu/release depscop
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
       with:
-        name: deps_cop-linux-${{ github.ref_name }}.tar.gz
-        path: deps_cop-linux-${{ github.ref_name }}.tar.gz
+        name: depscop-linux-${{ github.ref_name }}.tar.gz
+        path: depscop-linux-${{ github.ref_name }}.tar.gz
 
   build-windows:
     name: Build on Windows
@@ -39,12 +39,12 @@ jobs:
     - name: Build
       run: cargo build --release --target x86_64-pc-windows-gnu
     - name: Compress Windows Binary
-      run: 7z a deps_cop-windows-${{ github.ref_name }}.zip ./target/x86_64-pc-windows-gnu/release/deps_cop.exe
+      run: 7z a depscop-windows-${{ github.ref_name }}.zip ./target/x86_64-pc-windows-gnu/release/depscop.exe
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
       with:
-        name: deps_cop-windows-${{ github.ref_name }}.zip
-        path: deps_cop-windows-${{ github.ref_name }}.zip
+        name: depscop-windows-${{ github.ref_name }}.zip
+        path: depscop-windows-${{ github.ref_name }}.zip
 
   build-macos:
     name: Build on macOS for Intel and Apple Silicon
@@ -69,15 +69,15 @@ jobs:
       run: cargo build --release --target aarch64-apple-darwin
     - name: Compress macOS Binaries
       run: |
-        zip -j deps_cop-macos-x86_64-${{ github.ref_name }}.zip ./target/x86_64-apple-darwin/release/deps_cop
-        zip -j deps_cop-macos-arm64-${{ github.ref_name }}.zip ./target/aarch64-apple-darwin/release/deps_cop
+        zip -j depscop-macos-x86_64-${{ github.ref_name }}.zip ./target/x86_64-apple-darwin/release/depscop
+        zip -j depscop-macos-arm64-${{ github.ref_name }}.zip ./target/aarch64-apple-darwin/release/depscop
     - name: Upload Artifacts
       uses: actions/upload-artifact@v2
       with:
-        name: deps_cop-macos-${{ github.ref_name }}
+        name: depscop-macos-${{ github.ref_name }}
         path: |
-          deps_cop-macos-x86_64-${{ github.ref_name }}.zip
-          deps_cop-macos-arm64-${{ github.ref_name }}.zip
+          depscop-macos-x86_64-${{ github.ref_name }}.zip
+          depscop-macos-arm64-${{ github.ref_name }}.zip
 
   release:
       name: Release
@@ -95,9 +95,9 @@ jobs:
           uses: softprops/action-gh-release@v2
           with:
             files: |
-              downloaded-artifacts/deps_cop-linux-${{ github.ref_name }}.tar.gz/*
-              downloaded-artifacts/deps_cop-macos-${{ github.ref_name }}/*
-              downloaded-artifacts/deps_cop-windows-${{ github.ref_name }}.zip/*
+              downloaded-artifacts/depscop-linux-${{ github.ref_name }}.tar.gz/*
+              downloaded-artifacts/depscop-macos-${{ github.ref_name }}/*
+              downloaded-artifacts/depscop-windows-${{ github.ref_name }}.zip/*
             tag_name: ${{ env.VERSION }}
             name: Release ${{ env.VERSION }}
             body: 'Release version ${{ env.VERSION }}'

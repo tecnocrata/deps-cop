@@ -1,0 +1,34 @@
+# yaml-language-server: $schema=https://localhost:3000/schemas/package.schema.json
+
+PackageIdentifier: tecnocrata.depscop # Required, must be unique, convention is PublisherApplication
+PackageVersion: 0.1.25 # Required, following semver format
+PackageLocale: en-US # Required, values: en-US | fr-FR | es-ES | ...
+Publisher: tecnocrata # Required
+#PublisherUrl: https://www.tecnocrata.com # Required
+#PublisherSupportUrl: https://support.tecnocrata.com # Optional
+#PrivacyUrl: https://privacy.tecnocrata.com # Optional
+Author: tecnocrata # Optional
+PackageName: depscop # Required
+#PackageUrl: https://www.depscop.com # Optional
+License: MIT # Optional, values: MIT | BSD | GPL | ...
+LicenseUrl: https://licenses.tecnocrata.com/mit.txt # Optional
+CopyrightText: Copyright (c) tecnocrata 2023 # Optional
+ShortDescription: A short description of your app. # Required
+Description: A longer description of your app up to around 512 characters. # Required
+Moniker: depscop # Required, must be unique
+Tags: # Optional
+  - tool
+  - utility
+Installers: # Required, at least one installer entry
+  - Architecture: x64 # Required, values: x64 | x86 | arm64 | ...
+    InstallerUrl: https://yourdomain.com/installer.msi # Required
+    InstallerSha256: 28304a1e7... # Recommended
+    InstallerType: zip # Required, values: msi | inno | nullsoft | zip | ...
+ManifestType: defaultLocale # Required, values: defaultLocale | locale
+ManifestVersion: 1.0.0 # Required
+
+# Optional section for localized manifests
+# ManifestType: locale # Required if present, values: defaultLocale | locale
+# ManifestVersion: 1.2.0 # Required if present
+# ManifestLocale: es-ES # Required if ManifestType is 'locale', values: en-US | fr-FR | es-ES | ...
+# LocalePath: es-ES-description.md # Required if ManifestType is 'locale'

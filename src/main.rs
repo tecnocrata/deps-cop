@@ -13,6 +13,7 @@ use projects::{ProjectDependencyManager, ProjectDependencies};
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let matches = App::new("Project Dependency Analyzer")
         .version("1.0")
+        .author("tecnocrata <")
         .about("Analyzes dependencies from C# project files for now")
         .arg(Arg::new("folder")
              .long("folder")
@@ -175,7 +176,7 @@ fn generate_body_content(file: &mut File, format: &str, nodes: &[Node], node_dep
     }
     Ok(())
 }
-fn generate_body_content_graphviz(file: &mut File, nodes: &[Node], node_dependencies: &[Vec<usize>]) -> Result<(), Box<dyn std::error::Error>> {
+fn generate_body_content_graphviz(file: &mut File, _nodes: &[Node], _node_dependencies: &[Vec<usize>]) -> Result<(), Box<dyn std::error::Error>> {
     writeln!(file, "            <div id=\"graph-container\">")?;
     writeln!(file, "                <div id=\"graph\"></div>")?;
     writeln!(file, "            </div>")?;

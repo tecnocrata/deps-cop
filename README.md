@@ -1,6 +1,6 @@
-# deps_cop - Dependency Analyzer
+# depscop - Dependency Analyzer
 
-`deps_cop` is a Rust-based command-line tool designed to analyze and report on the dependencies between C# project files (`*.csproj`). It offers insights into project structures, visualizes dependencies via diagrams, and detects circular dependencies to help maintain clean and manageable project architectures.
+`depscop` is a Rust-based command-line tool designed to analyze and report on the dependencies between C# project files (`*.csproj`). It offers insights into project structures, visualizes dependencies via diagrams, and detects circular dependencies to help maintain clean and manageable project architectures.
 
 ## Features
 
@@ -12,7 +12,7 @@
 
 ## Installation
 
-To install `deps_cop`, you need Rust's package manager, Cargo. You can install Rust and Cargo via [rustup](https://rustup.rs/):
+To install `depscop`, you need Rust's package manager, Cargo. You can install Rust and Cargo via [rustup](https://rustup.rs/):
 
 ```bash
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
@@ -21,8 +21,8 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 Once Rust is installed, you can clone this repository and build the tool locally:
 
 ```bash
-git clone https://github.com/yourgithub/deps_cop.git
-cd deps_cop
+git clone https://github.com/tecnocrata/deps-cop
+cd depscop
 cargo build --release
 ```
 
@@ -34,19 +34,19 @@ The executable will be available in `./target/release/`.
 
 - **Listing Projects:**
   ```bash
-  ./deps_cop --folder path/to/solution --list
+  ./depscop --folder path/to/solution --list
   ```
 - **Generating a Dependency Graph:**
   ```bash
-  ./deps_cop --folder path/to/solution --output mermaid
+  ./depscop --folder path/to/solution --output mermaid
   ```
 - **Creating HTML Output:**
   ```bash
-  ./deps_cop --folder path/to/solution --output graphviz --output-html path/to/output.html
+  ./depscop --folder path/to/solution --output graphviz --output-html path/to/output.html
   ```
 - **Detecting Circular Dependencies:**
   ```bash
-  ./deps_cop --folder path/to/solution --detect-cycles
+  ./depscop --folder path/to/solution --detect-cycles
   ```
 
 ### Options
@@ -63,7 +63,7 @@ Contributions are welcome! Please feel free to submit pull requests, create issu
 
 ## License
 
-`deps_cop` is distributed under the MIT License. See `LICENSE` in the repository for more information.
+`depscop` is distributed under the MIT License. See `LICENSE` in the repository for more information.
 
 ## Contact
 
