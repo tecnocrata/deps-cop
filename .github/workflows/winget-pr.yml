@@ -15,9 +15,21 @@ jobs:
       run: |
         VERSION=${{ github.event.release.tag_name }}
         ZIP_URL="https://github.com/tecnocrata/deps-cop/releases/download/${VERSION}/depscop-windows-v${VERSION}.zip"
+        ZIP_FILE="depscop-windows-v${VERSION}.zip"
+        
+        # Download the ZIP file
+        curl -L -o $ZIP_FILE $ZIP_URL
+        
+        # Calculate SHA256 checksum
+        ZIP_CHECKSUM=$(sha256sum $ZIP_FILE | awk '{print $1}')
+        
         sed -i "s|InstallerUrl: .*|InstallerUrl: ${ZIP_URL}|" manifests/winget/depscop.yaml
         sed -i "s/PackageVersion: .*/PackageVersion: ${VERSION}/" manifests/winget/depscop.yaml
         sed -i "s/ManifestVersion: .*/ManifestVersion: ${VERSION}/" manifests/winget/depscop.yaml
+        sed -i "s/InstallerSha256: .*/InstallerSha256: ${ZIP_CHECKSUM}/" manifests/winget/depscop.yaml
+        
+        # Clean up
+        rm $ZIP_FILE
         
     - name: Create Pull Request
       uses: peter-evans/create-pull-request@v6
