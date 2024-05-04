@@ -122,18 +122,37 @@ fn generate_header_content(file: &mut File, format: &str) -> Result<(), Box<dyn 
         writeln!(file, "<script src=\"https://cdnjs.cloudflare.com/ajax/libs/viz.js/2.1.2/viz.js\"></script>")?;
         writeln!(file, "<script src=\"https://cdnjs.cloudflare.com/ajax/libs/viz.js/2.1.2/full.render.js\" integrity=\"sha512-1zKK2bG3QY2JaUPpfHZDUMe3dwBwFdCDwXQ01GrKSd+/l0hqPbF+aak66zYPUZtn+o2JYi1mjXAqy5mW04v3iA==\" crossorigin=\"anonymous\" referrerpolicy=\"no-referrer\"></script>")?;
     } else
-    if format == "sigma" {
-        writeln!(file, "<script src=\"https://cdnjs.cloudflare.com/ajax/libs/sigma.js/2.0.0/sigma.min.js\"></script>")?;
+    if format == "d3" {
+        generate_style_content_d3(file)?;
     }
     Ok(())
 }
 
+fn generate_style_content_d3(file: &mut File) -> Result<(), Box<dyn std::error::Error>> {
+    writeln!(file, "<style>")?;
+    writeln!(file, "    body {{ margin: 0; height: 100vh; display: flex; justify-content: center; align-items: center; background: #f4f4f4; }}")?;
+    writeln!(file, "    svg {{ cursor: grab; }}")?;
+    writeln!(file, "    .node circle {{ fill: steelblue; stroke: #fff; stroke-width: 1.5px; }}")?;
+    writeln!(file, "    .node text {{ font-size: 10px; font-family: Arial; pointer-events: none; }}")?;
+    writeln!(file, "    .link {{ fill: none; stroke: #999; stroke-opacity: 0.6; marker-end: url(#arrow); }}")?;
+    writeln!(file, "</style>")?;
+    Ok(())
+}
+
 fn generate_script_code(file: &mut File, format: &str, nodes: &[Node], node_dependencies: &[Vec<usize>]) -> Result<(), Box<dyn std::error::Error>> {
-    if format == "graphviz" {
-        writeln!(file, "<script>")?;
-        writeln!(file, "    var viz = new Viz();")?;
-        writeln!(file, "    var graphvizData = `")?;
-        writeln!(file, "digraph G {{")?;
+    match format {
+        "graphviz" => generate_script_code_graphviz(file, nodes, node_dependencies)?,
+        "d3" => generate_script_code_d3(file, nodes, node_dependencies)?,
+        _ => (),
+    }
+    Ok(())
+}
+
+fn generate_script_code_graphviz(file: &mut File, nodes: &[Node], node_dependencies: &[Vec<usize>]) -> Result<(), Box<dyn std::error::Error>> {
+    writeln!(file, "<script>")?;
+    writeln!(file, "    var viz = new Viz();")?;
+    writeln!(file, "    var graphvizData = `")?;
+    writeln!(file, "digraph G {{")?;
     for (index, node) in nodes.iter().enumerate() {
         writeln!(file, "    P{} [label=\"{}\"]", index + 1, node.name)?;
     }
@@ -142,37 +161,130 @@ fn generate_script_code(file: &mut File, format: &str, nodes: &[Node], node_depe
             writeln!(file, "    P{} -> P{}", index + 1, dep + 1)?;
         }
     }
-        writeln!(file, "}}`;")?;
+    writeln!(file, "}}`;")?;
 
-        writeln!(file, "    viz.renderSVGElement(graphvizData)")?;
-        writeln!(file, "            .then(function(element) {{")?;
-        writeln!(file, "                document.getElementById('graph').appendChild(element);")?;
-        writeln!(file, "                var svg = document.querySelector('#graph svg');")?;
-        writeln!(file, "                svg.style.width = '100%';")?;
-        writeln!(file, "                svg.style.height = 'auto';")?;
-        writeln!(file, "    }})")?;
-        writeln!(file, "    .catch(error => {{")?;
-        writeln!(file, "     console.error('Error rendering graph:', error);")?;
-        writeln!(file, "    }});")?;
-        writeln!(file, "</script>")?;
-    } else
-    if format == "sigma" {
-        writeln!(file, "<script>")?;
-        writeln!(file, "    let graph = document.querySelector('p').textContent;")?;
-        writeln!(file, "    let s = new sigma({{")?;
-        writeln!(file, "        container: 'graph-container',")?;
-        writeln!(file, "        graph: graph,")?;
-        writeln!(file, "    }});")?;
-        writeln!(file, "</script>")?;
+    writeln!(file, "    viz.renderSVGElement(graphvizData)")?;
+    writeln!(file, "            .then(function(element) {{")?;
+    writeln!(file, "                document.getElementById('graph').appendChild(element);")?;
+    writeln!(file, "                var svg = document.querySelector('#graph svg');")?;
+    writeln!(file, "                svg.style.width = '100%';")?;
+    writeln!(file, "                svg.style.height = 'auto';")?;
+    writeln!(file, "    }})")?;
+    writeln!(file, "    .catch(error => {{")?;
+    writeln!(file, "     console.error('Error rendering graph:', error);")?;
+    writeln!(file, "    }});")?;
+    writeln!(file, "</script>")?;
+    Ok(())
+}
+
+fn generate_script_code_d3(file: &mut File, nodes: &[Node], node_dependencies: &[Vec<usize>]) -> Result<(), Box<dyn std::error::Error>>  {
+    writeln!(file, "<script src=\"https://d3js.org/d3.v6.min.js\"></script>")?;
+    writeln!(file, "<script>")?;
+    writeln!(file, "    const width = 960, height = 600;")?;
+    writeln!(file, "    const svg = d3.select(\"svg\");")?;
+    writeln!(file, "    svg.append(\"defs\").append(\"marker\")")?;
+    writeln!(file, "        .attr(\"id\", \"arrow\")")?;
+    writeln!(file, "        .attr(\"viewBox\", \"0 -5 10 10\")")?;
+    writeln!(file, "        .attr(\"refX\", 25)")?;
+    writeln!(file, "        .attr(\"refY\", 0)")?;
+    writeln!(file, "        .attr(\"markerWidth\", 6)")?;
+    writeln!(file, "        .attr(\"markerHeight\", 6)")?;
+    writeln!(file, "        .attr(\"orient\", \"auto\")")?;
+    writeln!(file, "        .append(\"path\")")?;
+    writeln!(file, "        .attr(\"d\", \"M0,-5L10,0L0,5\")")?;
+    writeln!(file, "        .attr(\"fill\", \"#999\");")?;
+    writeln!(file, "    const g = svg.append(\"g\").attr(\"transform\", \"translate(\" + width / 2 + \",\" + height / 2 + \")\");")?;
+
+    // Generate the nodes data dynamically
+    writeln!(file, "    const nodes = [")?;
+    for node in nodes {
+        writeln!(file, "        {{ id: '{}', name: '{}' }},", node.id, node.name)?;
     }
+    writeln!(file, "    ];")?;
+
+    // Generate the links data dynamically
+    writeln!(file, "    const links = [")?;
+    for (index, dependencies) in node_dependencies.iter().enumerate() {
+        for &target_index in dependencies {
+            writeln!(file, "        {{ source: '{}', target: '{}' }},", nodes[index].id, nodes[target_index].id)?;
+        }
+    }
+    writeln!(file, "    ];")?;
+
+    // The remaining part of the script
+    writeln!(file, r#"
+        // Calculate incoming links for node size
+        nodes.forEach(node => {{
+            node.incomingLinks = links.filter(link => link.target === node.id).length;
+        }});
+
+        // Simulation
+        const simulation = d3.forceSimulation(nodes)
+            .force("link", d3.forceLink(links).id(d => d.id).distance(100))
+            .force("charge", d3.forceManyBody())
+            .force("center", d3.forceCenter(0, 0));
+
+        // Draw links
+        const link = g.selectAll(".link")
+            .data(links)
+            .join("line")
+            .classed("link", true)
+            .attr("stroke-width", 2);
+
+        // Draw nodes
+        const node = g.selectAll(".node")
+            .data(nodes)
+            .join("g")
+            .classed("node", true);
+            // .call(d3.drag()
+            //     .on("start", dragstarted)
+            //     .on("drag", dragged)
+            //     .on("end", dragended));
+
+        node.append("circle")
+            .attr("r", d => 5 + d.incomingLinks * 2); // Node size based on incoming links
+
+        node.append("text")
+            .attr("x", 8)
+            .attr("y", "0.31em")
+            .text(d => d.name);
+
+        simulation.on("tick", () => {{
+            link.attr("x1", d => d.source.x)
+                .attr("y1", d => d.source.y)
+                .attr("x2", d => d.target.x)
+                .attr("y2", d => d.target.y);
+
+            node.attr("transform", d => `translate(${{d.x}},${{d.y}})`);
+        }});
+
+        function dragstarted(event, d) {{
+            if (!event.active) simulation.alphaTarget(0.3).restart();
+            d.fx = d.x;
+            d.fy = d.y;
+        }}
+
+        function dragged(event, d) {{
+            d.fx = event.x;
+            d.fy = event.y;
+        }}
+
+        function dragended(event, d) {{
+            if (!event.active) simulation.alphaTarget(0);
+            d.fx = null;
+            d.fy = null;
+        }}
+    </script>
+    "#)?;
+
     Ok(())
 }
 
 fn generate_body_content(file: &mut File, format: &str, nodes: &[Node], node_dependencies: &[Vec<usize>]) -> Result<(), Box<dyn std::error::Error>> {
-    if format == "graphviz" {
-        generate_body_content_graphviz(file, nodes, node_dependencies)?;
-    } else if format == "sigma" {
-        generate_body_content_sigma(file)?;
+    match format {
+        "graphviz" => generate_body_content_graphviz(file, nodes, node_dependencies)?,
+        "d3" => generate_body_content_d3(file)?,
+        _ => (),
     }
     Ok(())
 }
@@ -183,11 +295,8 @@ fn generate_body_content_graphviz(file: &mut File, _nodes: &[Node], _node_depend
     Ok(())
 }
 
-fn generate_body_content_sigma(file: &mut File) -> Result<(), Box<dyn std::error::Error>> {
-    // Implementación de Sigma va aquí. Actualmente está vacío según instrucciones.
-    writeln!(file, "<div class=\"bg-accent-color h-full flex justify-center items-center\">")?;
-    writeln!(file, "<p>Placeholder for Sigma directed graph.</p>")?;
-    writeln!(file, "</div>")?;
+fn generate_body_content_d3(file: &mut File) -> Result<(), Box<dyn std::error::Error>> {
+    writeln!(file, "<svg width=\"960\" height=\"600\"></svg>")?;
     Ok(())
 }
 

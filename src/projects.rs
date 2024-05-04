@@ -31,7 +31,7 @@ pub struct Project {
 #[derive(Debug)]
 pub struct Node {
     // relative_path: String,
-    id: String, // Unique identifier per node
+    pub id: String, // Unique identifier per node
     pub name: String,
     // type: String
 }
