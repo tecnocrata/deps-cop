@@ -7,8 +7,18 @@ on:
 jobs:
   create-pr:
     runs-on: ubuntu-latest
+    
     steps:
     - uses: actions/checkout@v3
+    
+    - name: Update manifest
+      run: |
+        VERSION=${{ github.event.release.tag_name }}
+        ZIP_URL="https://github.com/tecnocrata/deps-cop/releases/download/${VERSION}/depscop-windows-v${VERSION}.zip"
+        sed -i "s|InstallerUrl: .*|InstallerUrl: ${ZIP_URL}|" manifests/winget/depscop.yaml
+        sed -i "s/PackageVersion: .*/PackageVersion: ${VERSION}/" manifests/winget/depscop.yaml
+        sed -i "s/ManifestVersion: .*/ManifestVersion: ${VERSION}/" manifests/winget/depscop.yaml
+        
     - name: Create Pull Request
       uses: peter-evans/create-pull-request@v4
       with:
@@ -18,5 +28,5 @@ jobs:
         author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
         branch: update-winget-manifest
         base: microsoft/winget-pkgs
-        path: manifests/YOUR_PUBLISHER/YOUR_APPNAME
+        path: manifests/winget
         delete-branch: true

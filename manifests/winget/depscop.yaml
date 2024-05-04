@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=https://localhost:3000/schemas/package.schema.json
 
 PackageIdentifier: tecnocrata.depscop # Required, must be unique, convention is PublisherApplication
-PackageVersion: 0.1.25 # Required, following semver format
+PackageVersion: 0.1.23 # Required, following semver format
 PackageLocale: en-US # Required, values: en-US | fr-FR | es-ES | ...
 Publisher: tecnocrata # Required
 #PublisherUrl: https://www.tecnocrata.com # Required
@@ -21,14 +21,8 @@ Tags: # Optional
   - utility
 Installers: # Required, at least one installer entry
   - Architecture: x64 # Required, values: x64 | x86 | arm64 | ...
-    InstallerUrl: https://yourdomain.com/installer.msi # Required
+    InstallerUrl: https://github.com/tecnocrata/deps-cop/releases/download/0.1.23/deps_cop-windows-v0.1.23.zip # Required
     InstallerSha256: 28304a1e7... # Recommended
     InstallerType: zip # Required, values: msi | inno | nullsoft | zip | ...
 ManifestType: defaultLocale # Required, values: defaultLocale | locale
-ManifestVersion: 1.0.0 # Required
-
-# Optional section for localized manifests
-# ManifestType: locale # Required if present, values: defaultLocale | locale
-# ManifestVersion: 1.2.0 # Required if present
-# ManifestLocale: es-ES # Required if ManifestType is 'locale', values: en-US | fr-FR | es-ES | ...
-# LocalePath: es-ES-description.md # Required if ManifestType is 'locale'
+ManifestVersion: 0.1.0 # Required
