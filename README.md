@@ -21,7 +21,7 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 Once Rust is installed, you can clone this repository and build the tool locally:
 
 ```bash
-git clone https://github.com/tecnocrata/depscop
+git clone https://github.com/tecnocrata/deps-cop
 cd depscop
 cargo build --release
 ```
