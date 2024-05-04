@@ -23,10 +23,10 @@ jobs:
         # Calculate SHA256 checksum
         ZIP_CHECKSUM=$(sha256sum $ZIP_FILE | awk '{print $1}')
         
-        sed -i "s|InstallerUrl: .*|InstallerUrl: ${ZIP_URL}|" manifests/winget/depscop.yaml
-        sed -i "s/PackageVersion: .*/PackageVersion: ${VERSION}/" manifests/winget/depscop.yaml
-        sed -i "s/ManifestVersion: .*/ManifestVersion: ${VERSION}/" manifests/winget/depscop.yaml
-        sed -i "s/InstallerSha256: .*/InstallerSha256: ${ZIP_CHECKSUM}/" manifests/winget/depscop.yaml
+        sed -i "s|InstallerUrl: .*|InstallerUrl: ${ZIP_URL}|" manifests/tecnocrata/depscop/depscop.yaml
+        sed -i "s/PackageVersion: .*/PackageVersion: ${VERSION}/" manifests/tecnocrata/depscop/depscop.yaml
+        sed -i "s/ManifestVersion: .*/ManifestVersion: ${VERSION}/" manifests/tecnocrata/depscop/depscop.yaml
+        sed -i "s/InstallerSha256: .*/InstallerSha256: ${ZIP_CHECKSUM}/" manifests/tecnocrata/depscop/depscop.yaml
         
         # Clean up
         rm $ZIP_FILE
