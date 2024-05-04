@@ -14,7 +14,7 @@ jobs:
     - name: Update manifest
       run: |
         VERSION=${{ github.event.release.tag_name }}
-        ZIP_URL="https://github.com/tecnocrata/deps-cop/releases/download/${VERSION}/depscop-windows-v${VERSION}.zip"
+        ZIP_URL="https://github.com/tecnocrata/depscop/releases/download/${VERSION}/depscop-windows-v${VERSION}.zip"
         sed -i "s|InstallerUrl: .*|InstallerUrl: ${ZIP_URL}|" manifests/winget/depscop.yaml
         sed -i "s/PackageVersion: .*/PackageVersion: ${VERSION}/" manifests/winget/depscop.yaml
         sed -i "s/ManifestVersion: .*/ManifestVersion: ${VERSION}/" manifests/winget/depscop.yaml
