@@ -28,5 +28,5 @@ jobs:
         author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
         branch: update-winget-manifest
         base: microsoft/winget-pkgs
-        path: manifests/winget
+        path: manifests/tecnocrata/depscop
         delete-branch: true
