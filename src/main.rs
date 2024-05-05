@@ -1,5 +1,5 @@
 use std::path::PathBuf;
-use clap::{App, Arg};
+use clap::{App, Arg, AppSettings};
 use std::fs::File;
 use std::io::Write;
 use chrono::Local;
@@ -11,10 +11,12 @@ use projects::{ProjectDependencyManager, ProjectDependencies};
 
 // Main entry point of the application
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let matches = App::new("Project Dependency Analyzer")
-        .version("1.0")
+    let matches = App::new("Dependency Analyzer Cop")
+        .version("0.1.0")
+        .mut_arg("version", |a| a.short('v'))  // It shows the version with -v
         .author("tecnocrata <")
         .about("Analyzes dependencies from C# project files for now")
+        .setting(AppSettings::ArgRequiredElseHelp)  // it shows the help if no arguments are provided
         .arg(Arg::new("folder")
              .long("folder")
              .short('f')
@@ -28,8 +30,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .arg(Arg::new("output")
              .long("output")
              .value_name("FORMAT")
-             .help("Selects output format ('mermaid' or 'graphviz')")
-             .takes_value(true))
+             .help("Selects output format ('d3', 'mermaid' or 'graphviz')")
+             .takes_value(true)
+             .requires("folder"))
         .arg(Arg::new("output-html")
              .long("output-html")
              .value_name("PATH")
@@ -58,6 +61,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             match format {
                 "mermaid" => generate_mermaid_diagram(&projects, &project_dependencies),
                 "graphviz" => generate_graphviz_diagram(&projects, &project_dependencies),
+                "d3" => eprintln!("D3 output is only available for HTML output."),
                 _ => eprintln!("Invalid format. Use 'mermaid' or 'graphviz'."),
             }
         }
