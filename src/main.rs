@@ -84,12 +84,13 @@ fn generate_html_output(nodes: &[Node], node_dependencies: &[Vec<usize>], path: 
     writeln!(file, "    <title>Dependencies Analyzer</title>")?;
     writeln!(file, "    <link rel=\"stylesheet\" href=\"https://unpkg.com/tailwindcss@2.2.19/dist/tailwind.min.css\"/>")?;
     writeln!(file, "    <link href=\"https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,700\" rel=\"stylesheet\">")?;
-    writeln!(file, "    <style>")?;
-    writeln!(file, "        body {{ font-family: 'Source Sans Pro', sans-serif; color: #4a5568; }}")?;
-    writeln!(file, "        .header {{ background-color: #667eea; color: #fafafa; padding: 20px; text-align: center; }}")?;
-    writeln!(file, "        .footer {{ background-color: #718096; color: #ffffff; text-align: center; padding: 10px; }}")?;
-    writeln!(file, "        .rust-logo {{ height: 50px; }}")?;
-    writeln!(file, "    </style>")?;
+    writeln!(file, "<style>")?;
+    writeln!(file, "    body {{ font-family: 'Source Sans Pro', sans-serif; color: #4a5568; margin: 0; display: flex; flex-direction: column; min-height: 100vh; }}")?;
+    writeln!(file, "    .header {{ background-color: #667eea; color: #fafafa; padding: 20px; text-align: center; }}")?;
+    writeln!(file, "    .content {{ flex: 1 0 auto; display: flex; justify-content: center; align-items: center; padding: 20px; overflow: auto; }}")?; // Se añade overflow:auto para manejar contenido excesivo
+    writeln!(file, "    .footer {{ background-color: #718096; color: #ffffff; text-align: center; padding: 10px; }}")?;
+    writeln!(file, "    .rust-logo {{ height: 50px; }}")?;
+    writeln!(file, "</style>")?;
     generate_header_content(&mut file, format)?;
     writeln!(file, "</head>")?;
     writeln!(file, "<body>")?;
@@ -97,11 +98,9 @@ fn generate_html_output(nodes: &[Node], node_dependencies: &[Vec<usize>], path: 
     writeln!(file, "        <h1>Dependencies Analyzer</h1>")?;
     writeln!(file, "        <p>This page was generated automatically.</p>")?;
     writeln!(file, "    </div>")?;
-    writeln!(file, "    <section class=\"flex justify-center items-center p-4 h-screen\">")?;
-    writeln!(file, "        <div class=\"w-full\">")?;
+    writeln!(file, "<div class=\"content\">")?;
     generate_body_content(&mut file, format, nodes, node_dependencies)?;
     writeln!(file, "        </div>")?;
-    writeln!(file, "    </section>")?;
     writeln!(file, "    <div class=\"footer\">")?;
     writeln!(file, "        <p>Generated on: {}</p>", now.format("%Y-%m-%dT%H:%M:%SZ"))?;
     writeln!(file, "        <p>Everything was generated using Rust.</p>")?;
@@ -130,8 +129,7 @@ fn generate_header_content(file: &mut File, format: &str) -> Result<(), Box<dyn 
 
 fn generate_style_content_d3(file: &mut File) -> Result<(), Box<dyn std::error::Error>> {
     writeln!(file, "<style>")?;
-    writeln!(file, "    body {{ margin: 0; height: 100vh; display: flex; justify-content: center; align-items: center; background: #f4f4f4; }}")?;
-    writeln!(file, "    svg {{ cursor: grab; }}")?;
+    writeln!(file, "    svg {{ cursor: grab; width: 100%; height: auto; max-height: 100%; }}")?;
     writeln!(file, "    .node circle {{ fill: steelblue; stroke: #fff; stroke-width: 1.5px; }}")?;
     writeln!(file, "    .node text {{ font-size: 10px; font-family: Arial; pointer-events: none; }}")?;
     writeln!(file, "    .link {{ fill: none; stroke: #999; stroke-opacity: 0.6; marker-end: url(#arrow); }}")?;
@@ -220,9 +218,9 @@ fn generate_script_code_d3(file: &mut File, nodes: &[Node], node_dependencies: &
 
         // Simulation
         const simulation = d3.forceSimulation(nodes)
-            .force("link", d3.forceLink(links).id(d => d.id).distance(100))
-            .force("charge", d3.forceManyBody())
-            .force("center", d3.forceCenter(0, 0));
+    .force("link", d3.forceLink(links).id(d => d.id).distance(200)) // Aumentar distancia
+    .force("charge", d3.forceManyBody().strength(-500)) // Aumentar repulsión
+    .force("center", d3.forceCenter(width / 2, height / 2));
 
         // Draw links
         const link = g.selectAll(".link")
@@ -297,6 +295,7 @@ fn generate_body_content_graphviz(file: &mut File, _nodes: &[Node], _node_depend
 
 fn generate_body_content_d3(file: &mut File) -> Result<(), Box<dyn std::error::Error>> {
     writeln!(file, "<svg width=\"960\" height=\"600\"></svg>")?;
+    // writeln!(file, "<svg viewBox=\"0 0 960 600\"></svg>")?;
     Ok(())
 }
 
