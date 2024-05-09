@@ -1,4 +1,5 @@
 use std::path::PathBuf;
+use std::env;
 use clap::{App, Arg, AppSettings};
 use std::fs::File;
 use std::io::Write;
@@ -45,8 +46,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
              .requires("folder"))
         .get_matches();
 
+    // Get the current directory
+    let current_dir = env::current_dir()?;
+
     let root_path = matches.value_of("folder")
-        .map_or_else(|| PathBuf::from("."), PathBuf::from);
+        .map_or_else(|| current_dir.clone(), |p| {
+            let path = PathBuf::from(p);
+            // if the path is relative, join it with the current directory
+            if path.is_relative() {
+                current_dir.join(path)
+            } else {
+                path
+            }
+        });
 
     let projects = ProjectDependencyManager::collect_projects(&root_path)?;
     let project_dependencies = ProjectDependencyManager::find_dependencies(&projects)?;
