@@ -41,7 +41,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
              .requires("output"))
         .arg(Arg::new("detect-cycles")
              .long("detect-cycles")
-             .help("Detects cycles in project dependencies"))
+             .help("Detects cycles in project dependencies")
+             .requires("folder"))
         .get_matches();
 
     let root_path = matches.value_of("folder")
