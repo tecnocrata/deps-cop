@@ -198,9 +198,14 @@ fn generate_script_code_graphviz(file: &mut File, nodes: &[Node], node_dependenc
 fn generate_script_code_d3(file: &mut File, nodes: &[Node], node_dependencies: &[Vec<usize>]) -> Result<(), Box<dyn std::error::Error>>  {
     writeln!(file, "<script src=\"https://d3js.org/d3.v6.min.js\"></script>")?;
     writeln!(file, "<script>")?;
-    writeln!(file, "    const width = 960, height = 600;")?;
-    // writeln!(file, "    const svg = d3.select(\"svg\");")?;
-    writeln!(file, "    const svg = d3.select('svg').attr('viewBox', '0 0 960 600').attr('preserveAspectRatio', 'xMidYMid meet').style('max-width', '100%').style('height', 'auto');")?;
+    writeln!(file, "    const svg = d3.select('svg'),")?;
+    writeln!(file, "          width = +svg.attr('width'),")?;
+    writeln!(file, "          height = +svg.attr('height');")?;
+    writeln!(file, "    const g = svg.append('g').attr('transform', 'translate(480, 300)');")?;
+    writeln!(file, "    svg.call(d3.zoom().on('zoom', (event) => {{")?;
+    writeln!(file, "        g.attr('transform', event.transform);")?;
+    writeln!(file, "    }}));")?;
+
     writeln!(file, "    svg.append('defs').append('marker')")?;
     writeln!(file, "        .attr('id', 'arrow')")?;
     writeln!(file, "        .attr('viewBox', '0 -5 10 10')")?;
@@ -212,7 +217,6 @@ fn generate_script_code_d3(file: &mut File, nodes: &[Node], node_dependencies: &
     writeln!(file, "        .append('path')")?;
     writeln!(file, "        .attr('d', 'M0,-5L10,0L0,5')")?;
     writeln!(file, "        .attr('fill', '#999');")?;
-    writeln!(file, "    const g = svg.append('g').attr('transform', 'translate(480, 300)');")?;
 
     // Generate the nodes data dynamically
     writeln!(file, "    const nodes = [")?;
@@ -230,7 +234,6 @@ fn generate_script_code_d3(file: &mut File, nodes: &[Node], node_dependencies: &
     }
     writeln!(file, "    ];")?;
 
-    // The remaining part of the script
     writeln!(file, r#"
         // Calculate incoming links for node size
         nodes.forEach(node => {{
@@ -239,9 +242,9 @@ fn generate_script_code_d3(file: &mut File, nodes: &[Node], node_dependencies: &
 
         // Simulation
         const simulation = d3.forceSimulation(nodes)
-    .force("link", d3.forceLink(links).id(d => d.id).distance(200)) // Aumentar distancia
-    .force("charge", d3.forceManyBody().strength(-500)) // Aumentar repulsión
-    .force("center", d3.forceCenter(width / 2, height / 2));
+            .force("link", d3.forceLink(links).id(d => d.id).distance(200))
+            .force("charge", d3.forceManyBody().strength(-500))
+            .force("center", d3.forceCenter(width / 2, height / 2));
 
         // Draw links
         const link = g.selectAll(".link")
@@ -261,7 +264,7 @@ fn generate_script_code_d3(file: &mut File, nodes: &[Node], node_dependencies: &
                 .on("end", dragended));
 
         node.append("circle")
-            .attr("r", d => 5 + d.incomingLinks * 2); // Node size based on incoming links
+            .attr("r", d => 5 + d.incomingLinks * 2);
 
         node.append("text")
             .attr("x", 8)
@@ -293,8 +296,8 @@ fn generate_script_code_d3(file: &mut File, nodes: &[Node], node_dependencies: &
             d.fx = null;
             d.fy = null;
         }}
-    </script>
     "#)?;
+    writeln!(file, "</script>")?;
 
     Ok(())
 }
