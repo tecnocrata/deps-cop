@@ -146,9 +146,12 @@ fn generate_header_content(file: &mut File, format: &str) -> Result<(), Box<dyn 
 
 fn generate_style_content_d3(file: &mut File) -> Result<(), Box<dyn std::error::Error>> {
     writeln!(file, "<style>")?;
-    writeln!(file, "    svg {{ cursor: grab; width: 100%; height: auto; max-height: 100%; }}")?;
+    // Define SVG size and overflow behavior
+    writeln!(file, "    svg {{ cursor: grab; width: 100%; height: auto; max-height: 80vh; overflow: auto; }}")?;
+    // Ensure consistent node styling
     writeln!(file, "    .node circle {{ fill: steelblue; stroke: #fff; stroke-width: 1.5px; }}")?;
-    writeln!(file, "    .node text {{ font-size: 10px; font-family: Arial; pointer-events: none; }}")?;
+    writeln!(file, "    .node text {{ font-size: 10px; font-family: 'Source Sans Pro', sans-serif; pointer-events: none; }}")?;
+    // Style for links including arrow markers
     writeln!(file, "    .link {{ fill: none; stroke: #999; stroke-opacity: 0.6; marker-end: url(#arrow); }}")?;
     writeln!(file, "</style>")?;
     Ok(())
