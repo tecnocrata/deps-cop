@@ -199,19 +199,20 @@ fn generate_script_code_d3(file: &mut File, nodes: &[Node], node_dependencies: &
     writeln!(file, "<script src=\"https://d3js.org/d3.v6.min.js\"></script>")?;
     writeln!(file, "<script>")?;
     writeln!(file, "    const width = 960, height = 600;")?;
-    writeln!(file, "    const svg = d3.select(\"svg\");")?;
-    writeln!(file, "    svg.append(\"defs\").append(\"marker\")")?;
-    writeln!(file, "        .attr(\"id\", \"arrow\")")?;
-    writeln!(file, "        .attr(\"viewBox\", \"0 -5 10 10\")")?;
-    writeln!(file, "        .attr(\"refX\", 25)")?;
-    writeln!(file, "        .attr(\"refY\", 0)")?;
-    writeln!(file, "        .attr(\"markerWidth\", 6)")?;
-    writeln!(file, "        .attr(\"markerHeight\", 6)")?;
-    writeln!(file, "        .attr(\"orient\", \"auto\")")?;
-    writeln!(file, "        .append(\"path\")")?;
-    writeln!(file, "        .attr(\"d\", \"M0,-5L10,0L0,5\")")?;
-    writeln!(file, "        .attr(\"fill\", \"#999\");")?;
-    writeln!(file, "    const g = svg.append(\"g\").attr(\"transform\", \"translate(\" + width / 2 + \",\" + height / 2 + \")\");")?;
+    // writeln!(file, "    const svg = d3.select(\"svg\");")?;
+    writeln!(file, "    const svg = d3.select('svg').attr('viewBox', '0 0 960 600').attr('preserveAspectRatio', 'xMidYMid meet').style('max-width', '100%').style('height', 'auto');")?;
+    writeln!(file, "    svg.append('defs').append('marker')")?;
+    writeln!(file, "        .attr('id', 'arrow')")?;
+    writeln!(file, "        .attr('viewBox', '0 -5 10 10')")?;
+    writeln!(file, "        .attr('refX', 25)")?;
+    writeln!(file, "        .attr('refY', 0)")?;
+    writeln!(file, "        .attr('markerWidth', 6)")?;
+    writeln!(file, "        .attr('markerHeight', 6)")?;
+    writeln!(file, "        .attr('orient', 'auto')")?;
+    writeln!(file, "        .append('path')")?;
+    writeln!(file, "        .attr('d', 'M0,-5L10,0L0,5')")?;
+    writeln!(file, "        .attr('fill', '#999');")?;
+    writeln!(file, "    const g = svg.append('g').attr('transform', 'translate(480, 300)');")?;
 
     // Generate the nodes data dynamically
     writeln!(file, "    const nodes = [")?;
@@ -253,11 +254,11 @@ fn generate_script_code_d3(file: &mut File, nodes: &[Node], node_dependencies: &
         const node = g.selectAll(".node")
             .data(nodes)
             .join("g")
-            .classed("node", true);
-            // .call(d3.drag()
-            //     .on("start", dragstarted)
-            //     .on("drag", dragged)
-            //     .on("end", dragended));
+            .classed("node", true)
+            .call(d3.drag()
+                .on("start", dragstarted)
+                .on("drag", dragged)
+                .on("end", dragended));
 
         node.append("circle")
             .attr("r", d => 5 + d.incomingLinks * 2); // Node size based on incoming links
