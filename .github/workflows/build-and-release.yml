@@ -47,15 +47,14 @@ jobs:
         echo "Description: A useful tool for analyzing dependencies" >> depscop-deb/DEBIAN/control
   
     - name: Build DEB Package
-      run: |
-        dpkg-deb --build depscop-deb
-        mv depscop-deb.deb depscop-${{ github.ref_name }}.deb
+      run: dpkg-deb --build depscop-deb
+        # mv depscop-deb.deb depscop-${{ github.ref_name }}.deb
   
     - name: Upload DEB Artifact
       uses: actions/upload-artifact@v2
       with:
         name: depscop-${{ github.ref_name }}.deb
-        path: depscop-linux-deb
+        path: depscop-deb.deb
 
   build-windows:
     name: Build on Windows
@@ -130,7 +129,7 @@ jobs:
         with:
           files: |
             downloaded-artifacts/depscop-linux-${{ github.ref_name }}.tar.gz/*
-            downloaded-artifacts/depscop-linux-deb/*
+            downloaded-artifacts/depscop-deb.deb/*
             downloaded-artifacts/depscop-macos-${{ github.ref_name }}/*
             downloaded-artifacts/depscop-windows-${{ github.ref_name }}.zip/*
           tag_name: ${{ github.ref_name }}
