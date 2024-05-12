@@ -1,0 +1,23 @@
+name: Publish .deb file to packagecloud
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  publish-to-packagecloud:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      
+      - name: Download .deb file from release
+        run: |
+          wget https://github.com/tecnocrata/deps-cop/releases/download/${{ github.event.release.tag_name }}/depscop-deb.deb
+
+      - name: Publish to PackageCloud for any distribution
+        env:
+          PACKAGECLOUD_TOKEN: ${{ secrets.PACKAGECLOUD_TOKEN }}
+        run: |
+          gem install package_cloud
+          package_cloud push tecnocrata/deps-cop/any/any depscop-deb.deb

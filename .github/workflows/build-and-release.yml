@@ -53,7 +53,7 @@ jobs:
     - name: Upload DEB Artifact
       uses: actions/upload-artifact@v2
       with:
-        name: depscop-${{ github.ref_name }}.deb
+        name: depscop-${{ github.ref_name }}.deb # renamed to include version
         path: depscop-deb.deb
 
   build-windows:
