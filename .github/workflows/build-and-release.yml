@@ -47,7 +47,9 @@ jobs:
         echo "Description: A useful tool for analyzing dependencies" >> depscop-deb/DEBIAN/control
   
     - name: Build DEB Package
-      run: dpkg-deb --build depscop-${{ github.ref_name }}
+      run: |
+        dpkg-deb --build depscop-deb
+        mv depscop-deb.deb depscop-${{ github.ref_name }}.deb
   
     - name: Upload DEB Artifact
       uses: actions/upload-artifact@v2
