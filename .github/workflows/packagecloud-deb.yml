@@ -23,7 +23,7 @@ jobs:
             PACKAGE-NAME: depscop-deb.deb
             PACKAGECLOUD-USERNAME: tecnocrata
             PACKAGECLOUD-REPONAME: deps-cop
-            PACKAGECLOUD-DISTRO: ubuntu
+            PACKAGECLOUD-DISTRO: any/any
             PACKAGECLOUD-TOKEN: ${{ secrets.PACKAGECLOUD_TOKEN }}
     #   - name: Publish to PackageCloud for any distribution
     #     env:
