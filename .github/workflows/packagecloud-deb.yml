@@ -15,9 +15,19 @@ jobs:
         run: |
           wget https://github.com/tecnocrata/deps-cop/releases/download/${{ github.event.release.tag_name }}/depscop-deb.deb
 
-      - name: Publish to PackageCloud for any distribution
-        env:
-          PACKAGECLOUD_TOKEN: ${{ secrets.PACKAGECLOUD_TOKEN }}
-        run: |
-          gem install package_cloud
-          package_cloud push tecnocrata/deps-cop/any/any depscop-deb.deb
+      - name: push package to packagecloud.io
+        uses: computology/packagecloud-github-action@v0.6
+        with:
+    ##### MODIFY: Change to packagecloud username, reponame, distro type
+    #####         To understand the available distro type, see https://www.rubydoc.info/gems/package_cloud/#pushing-a-package
+            PACKAGE-NAME: depscop-deb.deb
+            PACKAGECLOUD-USERNAME: tecnocrata
+            PACKAGECLOUD-REPONAME: deps-cop
+            PACKAGECLOUD-DISTRO: any
+            PACKAGECLOUD-TOKEN: ${{ secrets.PACKAGECLOUD_TOKEN }}
+    #   - name: Publish to PackageCloud for any distribution
+    #     env:
+    #       PACKAGECLOUD_TOKEN: ${{ secrets.PACKAGECLOUD_TOKEN }}
+    #     run: |
+    #       gem install package_cloud
+    #       package_cloud push tecnocrata/deps-cop/any/any depscop-deb.deb
