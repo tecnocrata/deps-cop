@@ -47,7 +47,7 @@ jobs:
         echo "Description: A useful tool for analyzing dependencies" >> depscop-deb/DEBIAN/control
   
     - name: Build DEB Package
-      run: dpkg-deb --build depscop-deb
+      run: dpkg-deb --build depscop-${{ github.ref_name }}
   
     - name: Upload DEB Artifact
       uses: actions/upload-artifact@v2
@@ -131,8 +131,8 @@ jobs:
             downloaded-artifacts/depscop-linux-deb/*
             downloaded-artifacts/depscop-macos-${{ github.ref_name }}/*
             downloaded-artifacts/depscop-windows-${{ github.ref_name }}.zip/*
-          tag_name: ${{ env.VERSION }}
-          name: Release ${{ env.VERSION }}
-          body: 'Release version ${{ env.VERSION }}'
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          body: 'Release version ${{ github.ref_name }}'
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_RELEASE }}
