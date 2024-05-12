@@ -7,24 +7,53 @@ on:
 
 jobs:
   build-linux:
-    name: Build on Linux
+    name: Build and Package on Linux
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+  
     - uses: actions-rs/toolchain@v1
       with:
         toolchain: stable
         target: x86_64-unknown-linux-gnu
         override: true
+  
     - name: Build
       run: cargo build --release --target x86_64-unknown-linux-gnu
+  
     - name: Compress Linux Binary
       run: tar -czvf depscop-linux-${{ github.ref_name }}.tar.gz -C target/x86_64-unknown-linux-gnu/release depscop
-    - name: Upload Artifact
+  
+    - name: Upload Artifact (Tarball)
       uses: actions/upload-artifact@v2
       with:
         name: depscop-linux-${{ github.ref_name }}.tar.gz
         path: depscop-linux-${{ github.ref_name }}.tar.gz
+  
+    - name: Create DEB Package Structure
+      run: |
+        mkdir -p depscop-deb/DEBIAN
+        mkdir -p depscop-deb/usr/local/bin
+        cp target/x86_64-unknown-linux-gnu/release/depscop depscop-deb/usr/local/bin
+  
+    - name: Create DEB Control File
+      run: |
+        echo "Package: depscop" > depscop-deb/DEBIAN/control
+        echo "Version: ${{ github.ref_name }}" >> depscop-deb/DEBIAN/control
+        echo "Section: base" >> depscop-deb/DEBIAN/control
+        echo "Priority: optional" >> depscop-deb/DEBIAN/control
+        echo "Architecture: amd64" >> depscop-deb/DEBIAN/control
+        echo "Maintainer: Enrique <enrique@ortuno.net>" >> depscop-deb/DEBIAN/control
+        echo "Description: A useful tool for analyzing dependencies" >> depscop-deb/DEBIAN/control
+  
+    - name: Build DEB Package
+      run: dpkg-deb --build depscop-deb
+  
+    - name: Upload DEB Artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: depscop-${{ github.ref_name }}.deb
+        path: depscop-linux-deb
 
   build-windows:
     name: Build on Windows
@@ -80,26 +109,30 @@ jobs:
           depscop-macos-arm64-${{ github.ref_name }}.zip
 
   release:
-      name: Release
-      needs: [build-linux, build-windows, build-macos]
-      runs-on: ubuntu-latest
-      steps:
-        - uses: actions/checkout@v2
-        - name: Extract version from tag
-          run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
-        - name: Download All Artifacts
-          uses: actions/download-artifact@v2
-          with:
-            path: downloaded-artifacts
-        - name: Create Release
-          uses: softprops/action-gh-release@v2
-          with:
-            files: |
-              downloaded-artifacts/depscop-linux-${{ github.ref_name }}.tar.gz/*
-              downloaded-artifacts/depscop-macos-${{ github.ref_name }}/*
-              downloaded-artifacts/depscop-windows-${{ github.ref_name }}.zip/*
-            tag_name: ${{ env.VERSION }}
-            name: Release ${{ env.VERSION }}
-            body: 'Release version ${{ env.VERSION }}'
-          env:
-            GITHUB_TOKEN: ${{ secrets.PAT_RELEASE }}
+    name: Release
+    needs: [build-linux, build-windows, build-macos]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+  
+      - name: Extract version from tag
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+  
+      - name: Download All Artifacts
+        uses: actions/download-artifact@v2
+        with:
+          path: downloaded-artifacts
+  
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            downloaded-artifacts/depscop-linux-${{ github.ref_name }}.tar.gz/*
+            downloaded-artifacts/depscop-linux-deb/*
+            downloaded-artifacts/depscop-macos-${{ github.ref_name }}/*
+            downloaded-artifacts/depscop-windows-${{ github.ref_name }}.zip/*
+          tag_name: ${{ env.VERSION }}
+          name: Release ${{ env.VERSION }}
+          body: 'Release version ${{ env.VERSION }}'
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_RELEASE }}
