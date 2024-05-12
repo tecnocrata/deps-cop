@@ -129,7 +129,7 @@ jobs:
         with:
           files: |
             downloaded-artifacts/depscop-linux-${{ github.ref_name }}.tar.gz/*
-            downloaded-artifacts/depscop-deb.deb/*
+            downloaded-artifacts/depscop-${{ github.ref_name }}.deb/*
             downloaded-artifacts/depscop-macos-${{ github.ref_name }}/*
             downloaded-artifacts/depscop-windows-${{ github.ref_name }}.zip/*
           tag_name: ${{ github.ref_name }}
