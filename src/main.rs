@@ -50,15 +50,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let current_dir = env::current_dir()?;
 
     let root_path = matches.value_of("folder")
-        .map_or_else(|| current_dir.clone(), |p| {
-            let path = PathBuf::from(p);
-            // if the path is relative, join it with the current directory
-            if path.is_relative() {
-                current_dir.join(path)
-            } else {
-                path
-            }
-        });
+    .map_or_else(|| Ok(current_dir.clone()), |p| {
+        let path = PathBuf::from(p);
+        let complete_path = if path.is_relative() {
+            current_dir.join(path)
+        } else {
+            path
+        };
+        // Canonicalize the path to resolve any '.' or '..'
+        complete_path.canonicalize()
+    })?;
 
     let projects = ProjectDependencyManager::collect_projects(&root_path)?;
     let project_dependencies = ProjectDependencyManager::find_dependencies(&projects)?;

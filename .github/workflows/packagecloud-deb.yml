@@ -25,9 +25,3 @@ jobs:
             PACKAGECLOUD-REPONAME: deps-cop
             PACKAGECLOUD-DISTRO: any/any
             PACKAGECLOUD-TOKEN: ${{ secrets.PACKAGECLOUD_TOKEN }}
-    #   - name: Publish to PackageCloud for any distribution
-    #     env:
-    #       PACKAGECLOUD_TOKEN: ${{ secrets.PACKAGECLOUD_TOKEN }}
-    #     run: |
-    #       gem install package_cloud
-    #       package_cloud push tecnocrata/deps-cop/any/any depscop-deb.deb
