@@ -61,15 +61,38 @@ jobs:
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v2
+
     - uses: actions-rs/toolchain@v1
       with:
         toolchain: stable
         target: x86_64-pc-windows-gnu
         override: true
+
     - name: Build
       run: cargo build --release --target x86_64-pc-windows-gnu
-    - name: Compress Windows Binary
-      run: 7z a depscop-windows-${{ github.ref_name }}.zip ./target/x86_64-pc-windows-gnu/release/depscop.exe
+
+    - name: Install NSIS
+      run: choco install nsis
+
+    - name: Create NSIS script
+      run: |
+        echo "!include 'MUI2.nsh'" > installer.nsi
+        echo "Name 'depscop'" >> installer.nsi
+        echo "OutFile 'depscop-installer.exe'" >> installer.nsi
+        echo "InstallDir '\$PROGRAMFILES\depscop'" >> installer.nsi
+        echo "Page directory" >> installer.nsi
+        echo "Page instfiles" >> installer.nsi
+        echo "Section ''" >> installer.nsi
+        echo "  SetOutPath '\$INSTDIR'" >> installer.nsi
+        echo "  File './target/x86_64-pc-windows-gnu/release/depscop.exe'" >> installer.nsi
+        echo "SectionEnd" >> installer.nsi
+
+    - name: Build Installer
+      run: makensis installer.nsi
+
+    - name: Compress Windows Binary and Installer
+      run: 7z a depscop-windows-${{ github.ref_name }}.zip ./depscop-installer.exe
+
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
       with:

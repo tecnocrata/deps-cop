@@ -1,28 +1,31 @@
-# yaml-language-server: $schema=https://localhost:3000/schemas/package.schema.json
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.installer.1.6.0.schema.json
 
 PackageIdentifier: tecnocrata.depscop # Required, must be unique, convention is PublisherApplication
-PackageVersion: 0.1.24 # Required, following semver format
+PackageVersion: 0.1.38 # Required, following semver format
 PackageLocale: en-US # Required, values: en-US | fr-FR | es-ES | ...
 Publisher: tecnocrata # Required
-#PublisherUrl: https://www.tecnocrata.com # Required
-#PublisherSupportUrl: https://support.tecnocrata.com # Optional
-#PrivacyUrl: https://privacy.tecnocrata.com # Optional
 Author: tecnocrata # Optional
-PackageName: depscop # Required
-#PackageUrl: https://www.depscop.com # Optional
+PackageName: Dependency Analyzer # Required
+PackageUrl: https://github.com/tecnocrata/deps-cop # Optional
 License: MIT # Optional, values: MIT | BSD | GPL | ...
 LicenseUrl: https://github.com/tecnocrata/deps-cop/blob/master/LICENSE # Optional
 CopyrightText: Copyright (c) tecnocrata 2024 # Optional
-ShortDescription: Dependency analysis tool. # Required
-Description: depscop is a command-line tool built with Rust that analyzes and reports on dependencies between projects, classes and different language elements. # Required
+ShortDescription: Dependency analysis CLI tool. # Required
+Description: depscop is a command-line tool built with Rust that analyzes and reports on dependencies between projects, classes, and different language elements. # Required
 Moniker: depscop # Required, must be unique
 Tags: # Optional
   - tool
   - utility
 Installers: # Required, at least one installer entry
   - Architecture: x64 # Required, values: x64 | x86 | arm64 | ...
-    InstallerUrl: https://github.com/tecnocrata/deps-cop/releases/download/0.1.24/deps_cop-windows-v0.1.24.zip # Required
-    InstallerSha256: 28304a1e7... # Recommended
+    InstallerUrl: https://github.com/tecnocrata/deps-cop/releases/download/0.1.38/deps_cop-windows-0.1.38.zip # Required
+    InstallerSha256: 46cc578f5ee06a3a10ab4b705a765646a98737b5bd96b080f7954d62c4b24cd5 # Recommended
     InstallerType: zip # Required, values: msi | inno | nullsoft | zip | ...
-ManifestType: defaultLocale # Required, values: defaultLocale | locale
-ManifestVersion: 0.1.24 # Required
+    InstallModes:
+      - interactive
+      - silent
+    InstallerSwitches:
+      Silent: /S
+      SilentWithProgress: /S
+ManifestType: installer # Required, values: defaultLocale | locale
+ManifestVersion: 1.0.0 # Required
