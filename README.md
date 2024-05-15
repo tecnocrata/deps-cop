@@ -22,7 +22,7 @@ Once Rust is installed, you can clone this repository and build the tool locally
 
 ```bash
 git clone https://github.com/tecnocrata/deps-cop
-cd depscop
+cd deps-cop
 cargo build --release
 ```
 
