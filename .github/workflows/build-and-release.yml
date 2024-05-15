@@ -72,7 +72,7 @@ jobs:
       run: cargo build --release --target x86_64-pc-windows-gnu
 
     - name: List Files After Build
-      run: dir /s /b
+      run: dir
 
     - name: Install NSIS
       run: choco install nsis
