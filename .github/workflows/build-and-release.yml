@@ -82,11 +82,11 @@ jobs:
         echo "!include 'MUI2.nsh'" > installer.nsi
         echo "Name 'depscop'" >> installer.nsi
         echo "OutFile 'depscop-installer.exe'" >> installer.nsi
-        echo "InstallDir '\$PROGRAMFILES\depscop'" >> installer.nsi
+        echo "InstallDir '$PROGRAMFILES\\depscop'" >> installer.nsi
         echo "Page directory" >> installer.nsi
         echo "Page instfiles" >> installer.nsi
         echo "Section ''" >> installer.nsi
-        echo "  SetOutPath '\$INSTDIR'" >> installer.nsi
+        echo "  SetOutPath '$INSTDIR'" >> installer.nsi
         echo "  File 'target\\x86_64-pc-windows-gnu\\release\\depscop.exe'" >> installer.nsi
         echo "SectionEnd" >> installer.nsi
 
