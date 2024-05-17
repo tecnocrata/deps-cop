@@ -13,7 +13,7 @@ use projects::{ProjectDependencyManager, ProjectDependencies};
 // Main entry point of the application
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let matches = App::new("Dependency Analyzer Cop")
-        .version("0.1.43")
+        .version("0.1.42")
         .mut_arg("version", |a| a.short('v'))  // It shows the version with -v
         .author("tecnocrata <")
         .about("Analyzes dependencies from C# project files for now")
