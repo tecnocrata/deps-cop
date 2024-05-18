@@ -104,9 +104,9 @@ fn generate_html_output(nodes: &[Node], node_dependencies: &[Vec<usize>], path: 
     writeln!(file, "    <link href=\"https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,700\" rel=\"stylesheet\">")?;
     writeln!(file, "<style>")?;
     writeln!(file, "    body {{ font-family: 'Source Sans Pro', sans-serif; color: #4a5568; margin: 0; display: flex; flex-direction: column; min-height: 100vh; }}")?;
-    writeln!(file, "    .header {{ background-color: #667eea; color: #fafafa; padding: 20px; text-align: center; }}")?;
-    writeln!(file, "    .content {{ flex: 1 0 auto; display: flex; justify-content: center; align-items: center; padding: 20px; overflow: auto; }}")?; // Se añade overflow:auto para manejar contenido excesivo
-    writeln!(file, "    .footer {{ background-color: #718096; color: #ffffff; text-align: center; padding: 10px; }}")?;
+    writeln!(file, "    .header {{ background-color: #667eea; color: #fafafa; padding: 20px; text-align: center; flex-shrink: 0; }}")?;
+    writeln!(file, "    .content {{ flex: 1; display: flex; flex-direction: column; padding: 0; overflow: hidden; }}")?;
+    writeln!(file, "    .footer {{ background-color: #718096; color: #ffffff; text-align: center; padding: 10px; flex-shrink: 0; }}")?;
     writeln!(file, "    .rust-logo {{ height: 50px; }}")?;
     writeln!(file, "</style>")?;
     generate_header_content(&mut file, format)?;
@@ -134,12 +134,14 @@ fn generate_html_output(nodes: &[Node], node_dependencies: &[Vec<usize>], path: 
 fn generate_header_content(file: &mut File, format: &str) -> Result<(), Box<dyn std::error::Error>> {
     if format == "graphviz" {
         writeln!(file, "    <style>")?;
-        writeln!(file, "        #graph-container {{ width: 100%; height: 80vh; overflow: auto; border: 1px solid #ccc; }}")?;
+        writeln!(file, "        #graph-container {{ flex: 1; display: flex; flex-direction: column; width: 100%; overflow: hidden; border: 1px solid #ccc; }}")?;
+        writeln!(file, "        #graph {{ flex: 1; width: 100%; height: 100% display: flex; }}")?;
+        // writeln!(file, "        #graph svg {{ width: 100%; height: 100%; }}")?;
         writeln!(file, "    </style>")?;
         writeln!(file, "<script src=\"https://cdnjs.cloudflare.com/ajax/libs/viz.js/2.1.2/viz.js\"></script>")?;
         writeln!(file, "<script src=\"https://cdnjs.cloudflare.com/ajax/libs/viz.js/2.1.2/full.render.js\" integrity=\"sha512-1zKK2bG3QY2JaUPpfHZDUMe3dwBwFdCDwXQ01GrKSd+/l0hqPbF+aak66zYPUZtn+o2JYi1mjXAqy5mW04v3iA==\" crossorigin=\"anonymous\" referrerpolicy=\"no-referrer\"></script>")?;
-    } else
-    if format == "d3" {
+        writeln!(file, "<script src=\"https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.1/dist/svg-pan-zoom.min.js\"></script>")?;
+    } else if format == "d3" {
         generate_style_content_d3(file)?;
     }
     Ok(())
@@ -181,20 +183,37 @@ fn generate_script_code_graphviz(file: &mut File, nodes: &[Node], node_dependenc
         }
     }
     writeln!(file, "}}`;")?;
-
     writeln!(file, "    viz.renderSVGElement(graphvizData)")?;
     writeln!(file, "            .then(function(element) {{")?;
-    writeln!(file, "                document.getElementById('graph').appendChild(element);")?;
-    writeln!(file, "                var svg = document.querySelector('#graph svg');")?;
+    writeln!(file, "                var graph = document.getElementById('graph');")?;
+    writeln!(file, "                graph.appendChild(element);")?;
+    writeln!(file, "                var svg = graph.querySelector('svg');")?;
+    writeln!(file, "                svg.setAttribute('preserveAspectRatio', 'none');")?;
     writeln!(file, "                svg.style.width = '100%';")?;
-    writeln!(file, "                svg.style.height = 'auto';")?;
-    writeln!(file, "    }})")?;
-    writeln!(file, "    .catch(error => {{")?;
-    writeln!(file, "     console.error('Error rendering graph:', error);")?;
-    writeln!(file, "    }});")?;
+    writeln!(file, "                svg.style.height = '100%';")?;
+    writeln!(file, "                svgPanZoom(svg, {{")?;
+    writeln!(file, "                    zoomEnabled: true,")?;
+    writeln!(file, "                    controlIconsEnabled: true,")?;
+    writeln!(file, "                    fit: true,")?;
+    writeln!(file, "                    center: true,")?;
+    writeln!(file, "                    minZoom: 0.5,")?;
+    writeln!(file, "                    maxZoom: 10")?;
+    writeln!(file, "                }});")?;
+    writeln!(file, "                function resizeSvg() {{")?;
+    writeln!(file, "                    var container = document.getElementById('graph-container');")?;
+    writeln!(file, "                    svg.style.width = container.clientWidth + 'px';")?;
+    writeln!(file, "                    svg.style.height = container.clientHeight + 'px';")?;
+    writeln!(file, "                }}")?;
+    writeln!(file, "                window.addEventListener('resize', resizeSvg);")?;
+    writeln!(file, "                resizeSvg();")?;
+    writeln!(file, "            }})")?;
+    writeln!(file, "            .catch(error => {{")?;
+    writeln!(file, "                console.error('Error rendering graph:', error);")?;
+    writeln!(file, "            }});")?;
     writeln!(file, "</script>")?;
     Ok(())
 }
+
 
 fn generate_script_code_d3(file: &mut File, nodes: &[Node], node_dependencies: &[Vec<usize>]) -> Result<(), Box<dyn std::error::Error>>  {
     writeln!(file, "<script src=\"https://d3js.org/d3.v6.min.js\"></script>")?;
