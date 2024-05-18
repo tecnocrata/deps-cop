@@ -95,13 +95,25 @@ jobs:
     - name: Build Installer
       run: makensis installer.nsi
 
-    - name: Compress Windows Binary and Installer
+    - name: Compress Installer Only
       run: 7z a depscop-windows-${{ github.ref_name }}.zip ./depscop-installer.exe
 
-    - name: Upload Artifact
+    - name: Upload Executable
       uses: actions/upload-artifact@v2
       with:
-        name: depscop-windows-${{ github.ref_name }}.zip
+        name: depscop-windows-executable-${{ github.ref_name }}
+        path: target/x86_64-pc-windows-gnu/release/depscop.exe
+
+    - name: Upload Installer
+      uses: actions/upload-artifact@v2
+      with:
+        name: depscop-windows-installer-${{ github.ref_name }}
+        path: depscop-installer.exe
+
+    - name: Upload Compressed Installer
+      uses: actions/upload-artifact@v2
+      with:
+        name: depscop-windows-zip-${{ github.ref_name }}
         path: depscop-windows-${{ github.ref_name }}.zip
 
   build-macos:
@@ -159,7 +171,9 @@ jobs:
             downloaded-artifacts/depscop-linux-${{ github.ref_name }}.tar.gz/*
             downloaded-artifacts/depscop-${{ github.ref_name }}.deb/*
             downloaded-artifacts/depscop-macos-${{ github.ref_name }}/*
-            downloaded-artifacts/depscop-windows-${{ github.ref_name }}.zip/*
+            downloaded-artifacts/depscop-windows-executable-${{ github.ref_name }}/*
+            downloaded-artifacts/depscop-windows-installer-${{ github.ref_name }}/*
+            downloaded-artifacts/depscop-windows-zip-${{ github.ref_name }}.zip/*
           tag_name: ${{ github.ref_name }}
           name: Release ${{ github.ref_name }}
           body: 'Release version ${{ github.ref_name }}'
