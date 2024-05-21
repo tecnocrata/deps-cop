@@ -82,7 +82,7 @@ jobs:
         echo "!include 'MUI2.nsh'" > installer.nsi
         echo "Name 'depscop'" >> installer.nsi
         echo "OutFile 'depscop-installer.exe'" >> installer.nsi
-        echo "InstallDir '\$PROGRAMFILES64\\depscop'" >> installer.nsi
+        echo "InstallDir $PROGRAMFILES" >> installer.nsi
         echo "InstallDirRegKey HKLM 'Software\depscop' 'Install_Dir'" >> installer.nsi
         echo "ShowInstDetails show" >> installer.nsi
         echo "ShowUnInstDetails show" >> installer.nsi
@@ -91,15 +91,15 @@ jobs:
         echo "Page directory" >> installer.nsi
         echo "Page instfiles" >> installer.nsi
         echo "Section ''" >> installer.nsi
-        echo "  SetOutPath '\$INSTDIR'" >> installer.nsi
+        echo "  SetOutPath $INSTDIR" >> installer.nsi
         echo "  File 'target\\x86_64-pc-windows-gnu\\release\\depscop.exe'" >> installer.nsi
-        echo "  WriteUninstaller '\$INSTDIR\\Uninstall.exe'" >> installer.nsi
-        echo "  WriteRegStr HKLM 'Software\depscop' 'Install_Dir' '\$INSTDIR'" >> installer.nsi
+        echo "  WriteUninstaller '$INSTDIR\\Uninstall.exe'" >> installer.nsi
+        echo "  WriteRegStr HKLM 'Software\depscop' 'Install_Dir' '$INSTDIR'" >> installer.nsi
         echo "SectionEnd" >> installer.nsi
         echo "Section 'Uninstall'" >> installer.nsi
-        echo "  Delete '\$INSTDIR\\depscop.exe'" >> installer.nsi
-        echo "  Delete '\$INSTDIR\\Uninstall.exe'" >> installer.nsi
-        echo "  RMDir '\$INSTDIR'" >> installer.nsi
+        echo "  Delete '$INSTDIR\\depscop.exe'" >> installer.nsi
+        echo "  Delete '$INSTDIR\\Uninstall.exe'" >> installer.nsi
+        echo "  RMDir '$INSTDIR'" >> installer.nsi
         echo "  DeleteRegKey HKLM 'Software\depscop'" >> installer.nsi
         echo "SectionEnd" >> installer.nsi
 
