@@ -91,7 +91,7 @@ jobs:
         echo "Page directory" >> installer.nsi
         echo "Page instfiles" >> installer.nsi
         echo "Section ''" >> installer.nsi
-        echo "  SetOutPath \$INSTDIR" >> installer.nsi
+        echo "  SetOutPath '\$INSTDIR'" >> installer.nsi
         echo "  File 'target\\x86_64-pc-windows-gnu\\release\\depscop.exe'" >> installer.nsi
         echo "  WriteUninstaller '\$INSTDIR\\Uninstall.exe'" >> installer.nsi
         echo "  WriteRegStr HKLM 'Software\depscop' 'Install_Dir' '\$INSTDIR'" >> installer.nsi
