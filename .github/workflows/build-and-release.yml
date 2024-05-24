@@ -74,40 +74,8 @@ jobs:
     - name: List Files After Build
       run: dir
 
-    - name: Install NSIS
-      run: choco install nsis
-
-    - name: Create NSIS script
-      run: |
-        echo "!include 'MUI2.nsh'" > installer.nsi
-        echo "Name 'depscop'" >> installer.nsi
-        echo "OutFile 'depscop-installer.exe'" >> installer.nsi
-        echo "InstallDir '$PROGRAMFILES64\\depscop'" >> installer.nsi
-        echo "InstallDirRegKey HKLM 'Software\\depscop' 'Install_Dir'" >> installer.nsi
-        echo "ShowInstDetails show" >> installer.nsi
-        echo "ShowUnInstDetails show" >> installer.nsi
-        echo "SilentInstall silent" >> installer.nsi
-        echo "SilentUnInstall silent" >> installer.nsi
-        echo "Page directory" >> installer.nsi
-        echo "Page instfiles" >> installer.nsi
-        echo "Section 'MainSection' SEC01" >> installer.nsi
-        echo "  SetOutPath '$INSTDIR'" >> installer.nsi
-        echo "  File 'target\\x86_64-pc-windows-gnu\\release\\depscop.exe'" >> installer.nsi
-        echo "  WriteUninstaller '$INSTDIR\\Uninstall.exe'" >> installer.nsi
-        echo "  WriteRegStr HKLM 'Software\\depscop' 'Install_Dir' '$INSTDIR'" >> installer.nsi
-        echo "SectionEnd" >> installer.nsi
-        echo "Section 'Uninstall'" >> installer.nsi
-        echo "  Delete '$INSTDIR\\depscop.exe'" >> installer.nsi
-        echo "  Delete '$INSTDIR\\Uninstall.exe'" >> installer.nsi
-        echo "  RMDir '$INSTDIR'" >> installer.nsi
-        echo "  DeleteRegKey HKLM 'Software\\depscop'" >> installer.nsi
-        echo "SectionEnd" >> installer.nsi
-
-    - name: Build Installer
-      run: makensis installer.nsi
-
-    - name: Compress Installer Only
-      run: 7z a depscop-windows-${{ github.ref_name }}.zip ./depscop-installer.exe
+    - name: Compress Executable Only
+      run: 7z a depscop-windows-${{ github.ref_name }}.zip ./target/x86_64-pc-windows-gnu/release/depscop.exe
 
     - name: Upload Executable
       uses: actions/upload-artifact@v2
@@ -115,13 +83,7 @@ jobs:
         name: depscop-windows-executable-${{ github.ref_name }}
         path: target/x86_64-pc-windows-gnu/release/depscop.exe
 
-    - name: Upload Installer
-      uses: actions/upload-artifact@v2
-      with:
-        name: depscop-windows-installer-${{ github.ref_name }}
-        path: depscop-installer.exe
-
-    - name: Upload Compressed Installer
+    - name: Upload Compressed Executable
       uses: actions/upload-artifact@v2
       with:
         name: depscop-windows-zip-${{ github.ref_name }}
@@ -183,7 +145,6 @@ jobs:
             downloaded-artifacts/depscop-${{ github.ref_name }}.deb/*
             downloaded-artifacts/depscop-macos-${{ github.ref_name }}/*
             downloaded-artifacts/depscop-windows-executable-${{ github.ref_name }}/*
-            downloaded-artifacts/depscop-windows-installer-${{ github.ref_name }}/*
             downloaded-artifacts/depscop-windows-zip-${{ github.ref_name }}/*
           tag_name: ${{ github.ref_name }}
           name: Release ${{ github.ref_name }}
