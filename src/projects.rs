@@ -6,6 +6,8 @@ use path_slash::PathExt;
 use serde::Deserialize;
 use walkdir::WalkDir;
 
+use crate::configuration::Config;
+
 #[derive(Debug, Deserialize, PartialEq)]
 #[serde(rename_all = "PascalCase")]
 struct ProjectReference {
@@ -33,20 +35,21 @@ pub struct Node {
     // relative_path: String,
     pub id: String, // Unique identifier per node
     pub name: String,
-    // pub ype: String
+    pub layer: String, // core, io, usecase
+    pub node_type: String // project, namespace, class, folder
 }
 
 pub struct ProjectDependencyManager;
 
 pub trait ProjectDependencies {
-    fn collect_projects(root_path: &Path) -> Result<Vec<Node>, Error>;
+    fn collect_csharp_projects(root_path: &Path, config: &Config) -> Result<Vec<Node>, Error>;
     fn find_dependencies(projects: &[Node]) -> Result<Vec<Vec<usize>>, Error>;
     fn detect_cycles(projects: &[Node], project_dependencies: &[Vec<usize>]);
 }
 
 impl ProjectDependencies for ProjectDependencyManager {
     /// Collects CsProject data from .csproj files found under the given root path
-    fn collect_projects(root_path: &Path) -> Result<Vec<Node>, Error> {
+    fn collect_csharp_projects(root_path: &Path, config: &Config) -> Result<Vec<Node>, Error> {
         let mut projects = Vec::new();
 
         for entry in WalkDir::new(root_path) {
@@ -65,21 +68,11 @@ impl ProjectDependencies for ProjectDependencyManager {
                         continue; // Skip this file if parsing fails
                     }
                 };
-                
-                // if project.tools_version.is_some() {
-                //     println!("Skipping '{}' due to incompatible csproj file.", path.display());
-                //     continue; // Skip this file if ToolsVersion is present
-                // }
 
-                // If ToolsVersion is not present, process the file
-                // let relative_path = match path.strip_prefix(root_path) {
-                //     Ok(stripped_path) => stripped_path.to_str().unwrap().to_string(),
-                //     Err(_) => return Err(std::io::Error::new(std::io::ErrorKind::Other, "Failed to strip prefix")),
-                // };
                 let absolute_path = path.to_str().unwrap().to_string();
                 let name = path.file_name().unwrap().to_str().unwrap().to_string();
 
-                projects.push(Node { id: absolute_path, name });
+                projects.push(Node { id: absolute_path, name, node_type: "project".to_string(), layer: "core".to_string()});
             }
         }
 

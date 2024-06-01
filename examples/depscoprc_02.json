@@ -24,5 +24,14 @@
             "io": "*IO*",
             "usecase": "*UseCase*"
         }
+    },
+    "javascript":{
+        "pattern":"wildcard",
+        "caseSensitive":"false",
+        "folders":{
+            "core":"*Entities*",
+            "io":"*IO*",
+            "usecase":"*UseCase*"
+        }
     }
 }

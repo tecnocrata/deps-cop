@@ -65,20 +65,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let config = load_config(&root_path);
     println!("Configuration: {:#?}", config);
 
-    let projects = ProjectDependencyManager::collect_projects(&root_path)?;
-    let project_dependencies = ProjectDependencyManager::find_dependencies(&projects)?;
+    let nodes = ProjectDependencyManager::collect_csharp_projects(&root_path, &config)?;
+    let project_dependencies = ProjectDependencyManager::find_dependencies(&nodes)?;
 
     if matches.is_present("list") {
-        display_project_information(&projects, &project_dependencies);
+        display_project_information(&nodes, &project_dependencies);
     }
 
     if let Some(format) = matches.value_of("output") {
         if let Some(html_path) = matches.value_of("output-html") {
-            generate_html_output(&projects, &project_dependencies, html_path, format)?;
+            generate_html_output(&nodes, &project_dependencies, html_path, format)?;
         } else {
             match format {
-                "mermaid" => generate_mermaid_diagram(&projects, &project_dependencies),
-                "graphviz" => generate_graphviz_diagram(&projects, &project_dependencies),
+                "mermaid" => generate_mermaid_diagram(&nodes, &project_dependencies),
+                "graphviz" => generate_graphviz_diagram(&nodes, &project_dependencies),
                 "d3" => eprintln!("D3 output is only available for HTML output."),
                 _ => eprintln!("Invalid format. Use 'mermaid' or 'graphviz'."),
             }
@@ -86,7 +86,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     if matches.is_present("detect-cycles") {
-        ProjectDependencyManager::detect_cycles(&projects, &project_dependencies);
+        ProjectDependencyManager::detect_cycles(&nodes, &project_dependencies);
     }
 
     Ok(())
