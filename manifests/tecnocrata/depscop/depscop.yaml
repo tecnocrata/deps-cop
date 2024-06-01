@@ -23,7 +23,7 @@ PackageVersion: 0.1.42
 PackageLocale: en-US
 Publisher: tecnocrata
 PackageName: Dependency Analyzer
-License: MIT
+License: Apache2.0
 ShortDescription: Dependency analysis CLI tool.
 ManifestType: defaultLocale
 ManifestVersion: 1.6.0

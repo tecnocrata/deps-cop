@@ -63,7 +63,7 @@ Contributions are welcome! Please feel free to submit pull requests, create issu
 
 ## License
 
-`depscop` is distributed under the MIT License. See `LICENSE` in the repository for more information.
+`depscop` is distributed under the Apache 2.0 License. See `LICENSE` in the repository for more information.
 
 ## Contact
 
