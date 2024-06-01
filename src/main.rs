@@ -4,7 +4,9 @@ use clap::{App, Arg, AppSettings};
 
 mod projects;
 mod static_output;
+mod configuration;
 
+use configuration::load_config;
 use projects::{ProjectDependencyManager, ProjectDependencies};
 use static_output::{generate_html_output, generate_mermaid_diagram, generate_graphviz_diagram, display_project_information};
 
@@ -59,6 +61,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         // Canonicalize the path to resolve any '.' or '..'
         complete_path.canonicalize()
     })?;
+
+    let config = load_config(&root_path);
+    println!("Configuration: {:#?}", config);
 
     let projects = ProjectDependencyManager::collect_projects(&root_path)?;
     let project_dependencies = ProjectDependencyManager::find_dependencies(&projects)?;
