@@ -15,9 +15,9 @@
         "pattern": "regex",
         "caseSensitive": "true",
         "projects":{
-                "core": ".*\\.Entities\\..*\\.csproj$",
-                "io": ".*\\.IO\\..*\\.csproj$",
-                "usecase": ".*\\.UseCase\\..*\\.csproj$"
+                "core": ".*\\.Entities.*\\.csproj$",
+                "io": ".*\\.IO.*\\.csproj$",
+                "usecase": ".*\\.UseCase.*\\.csproj$"
         },
         "namespaces": {
             "core": ".*\\.Entities\\..*",

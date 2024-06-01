@@ -25,23 +25,23 @@ struct Global {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(untagged)]
-enum StringOrVec {
+pub enum StringOrVec {
     String(String),
     Vec(Vec<String>),
 }
 
 #[derive(Serialize, Deserialize, Debug, Default)]
-struct Csharp {
+pub struct Csharp {
     pattern: String,
     case_sensitive: String,
-    projects: std::collections::HashMap<String, StringOrVec>,
+    pub projects: std::collections::HashMap<String, StringOrVec>,
     namespaces: std::collections::HashMap<String, String>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Config {
     global: Global,
-    csharp: Csharp,
+    pub csharp: Csharp,
 }
 
 impl Default for Config {
@@ -63,9 +63,9 @@ impl Default for Config {
                 pattern: "regex".to_string(),
                 case_sensitive: "true".to_string(),
                 projects: [
-                    ("core".to_string(), StringOrVec::String(".*\\.Entities\\..*\\.csproj$".to_string())),
-                    ("io".to_string(), StringOrVec::String(".*\\.IO\\..*\\.csproj$".to_string())),
-                    ("usecase".to_string(), StringOrVec::String(".*\\.UseCase\\..*\\.csproj$".to_string())),
+                    ("core".to_string(), StringOrVec::String(r".*\.Entities.*\.csproj$".to_string())),
+                    ("io".to_string(), StringOrVec::String(r".*\.IO.*\.csproj$".to_string())),
+                    ("usecase".to_string(), StringOrVec::String(r".*\.UseCase.*\.csproj$".to_string())),
                 ]
                 .iter()
                 .cloned()

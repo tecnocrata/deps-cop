@@ -4,9 +4,10 @@ use std::io::{BufReader, Error, Read};
 use std::path::Path;
 use path_slash::PathExt;
 use serde::Deserialize;
+use regex::Regex;
 use walkdir::WalkDir;
 
-use crate::configuration::Config;
+use crate::configuration::{Config, StringOrVec};
 
 #[derive(Debug, Deserialize, PartialEq)]
 #[serde(rename_all = "PascalCase")]
@@ -72,10 +73,16 @@ impl ProjectDependencies for ProjectDependencyManager {
                 let absolute_path = path.to_str().unwrap().to_string();
                 let name = path.file_name().unwrap().to_str().unwrap().to_string();
 
-                projects.push(Node { id: absolute_path, name, node_type: "project".to_string(), layer: "core".to_string()});
+                let layer = determine_layer(&name, &config);
+                projects.push(Node {
+                    id: absolute_path,
+                    name,
+                    node_type: "project".to_string(),
+                    layer,
+                });
             }
         }
-
+    
         Ok(projects)
     }
 
@@ -138,6 +145,27 @@ impl ProjectDependencies for ProjectDependencyManager {
             println!("No circular dependencies detected.");
         }
     }
+    
+}
+
+fn determine_layer(name: &str, config: &Config) -> String {
+    println!("analyzed name: {}", name);
+    for (layer, pattern) in &config.csharp.projects {
+        let patterns = match pattern {
+            StringOrVec::String(p) => vec![p.clone()],
+            StringOrVec::Vec(ps) => ps.clone(),
+        };
+        println!("patterns {:?} -> ", patterns);
+        for pat in patterns {
+            if let Ok(re) = Regex::new(&pat) {
+                if re.is_match(name) {
+                    print!("{} -> ", name);
+                    return layer.clone();
+                }
+            }
+        }
+    }
+    "unknown".to_string()
 }
 
 /// Helper function to perform Depth-First Search (DFS) to detect cycles
