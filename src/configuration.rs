@@ -55,14 +55,34 @@ pub struct Config {
     pub csharp: Csharp,
 }
 
+// Implement a method for configuration to return the color given the layer
+impl Config {
+    pub fn get_color(&self, layer: &str) -> Option<&String> {
+        match layer {
+            "core" => Some(&self.global.colors.core),
+            "io" => Some(&self.global.colors.io),
+            "usecase" => Some(&self.global.colors.usecase),
+            _ => None,
+        }
+    }
+
+    // pub fn get_projects(&self, layer: &str) -> Option<&StringOrVec> {
+    //     self.csharp.projects.get(layer)
+    // }
+
+    // pub fn get_namespaces(&self, layer: &str) -> Option<&String> {
+    //     self.csharp.namespaces.get(layer)
+    // }
+}
+
 impl Default for Config {
     fn default() -> Self {
         Self {
             global: Global {
                 colors: Colors {
-                    core: "red".to_string(),
-                    io: "green".to_string(),
-                    usecase: "blue".to_string(),
+                    core: "#FBFDB8".to_string(),
+                    io: "#A7D7FD".to_string(),
+                    usecase: "#FEA29C".to_string(),
                 },
                 allowed: Allowed {
                     core: vec!["core".to_string()],

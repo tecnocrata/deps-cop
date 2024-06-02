@@ -1,9 +1,9 @@
 {
     "global": {
         "colors": {
-            "core": "red",
-            "io": "green",
-            "usecase": "blue"
+            "core": "#FBFDB8",
+            "io": "#A7D7FD",
+            "usecase": "#FEA29C"
         },
         "allowed": {
             "io": ["core", "io", "usecase"],

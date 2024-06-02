@@ -37,7 +37,8 @@ pub struct Node {
     pub id: String, // Unique identifier per node
     pub name: String,
     pub layer: String, // core, io, usecase
-    pub node_type: String // project, namespace, class, folder
+    pub node_type: String, // project, namespace, class, folder
+    pub color: String,
 }
 
 #[derive(Debug)]
@@ -83,11 +84,13 @@ impl ProjectDependencies for ProjectDependencyManager {
                 let name = path.file_name().unwrap().to_str().unwrap().to_string();
 
                 let layer = determine_layer(&name, &config);
+                let color = config.get_color(&layer).unwrap_or(&"gray".to_string()).to_string();
                 projects.push(Node {
                     id: absolute_path,
                     name,
                     node_type: "project".to_string(),
                     layer,
+                    color
                 });
             }
         }

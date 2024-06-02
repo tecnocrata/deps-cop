@@ -91,7 +91,7 @@ fn generate_script_code_graphviz(file: &mut File, nodes: &[Node], node_dependenc
     writeln!(file, "    var graphvizData = `")?;
     writeln!(file, "digraph G {{")?;
     for (index, node) in nodes.iter().enumerate() {
-        writeln!(file, "    P{} [label=\"{}\"]", index + 1, node.name)?;
+        writeln!(file, "    P{} [label=\"{}\", style=filled, fillcolor=\"{}\"]", index + 1, node.name, node.color)?;
     }
     for (index, deps) in node_dependencies.iter().enumerate() {
         for dep in deps {
@@ -291,8 +291,8 @@ pub fn generate_mermaid_diagram(nodes: &[Node], node_dependencies: &NodeDependen
 /// Generates a Graphviz diagram based on project dependencies
 pub fn generate_graphviz_diagram(nodes: &[Node], node_dependencies: &NodeDependencies) {
     println!("digraph G {{");
-    for (index, project) in nodes.iter().enumerate() {
-        println!("    P{} [label=\"{}\"]", index + 1, project.name);
+    for (index, node) in nodes.iter().enumerate() {
+        println!("    P{} [label=\"{}\", style=filled, fillcolor=\"{}\"]", index + 1, node.name, node.color);
     }
     for (index, deps) in node_dependencies.iter().enumerate() {
         for dep in deps {
