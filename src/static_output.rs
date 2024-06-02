@@ -2,9 +2,9 @@ use std::fs::File;
 use std::io::Write;
 use chrono::Local;
 
-use crate::projects::Node;
+use crate::projects::{Node, NodeDependencies};
 
-pub fn generate_html_output(nodes: &[Node], node_dependencies: &[Vec<usize>], path: &str, format: &str) -> Result<(), Box<dyn std::error::Error>> {
+pub fn generate_html_output(nodes: &[Node], node_dependencies: &NodeDependencies, path: &str, format: &str) -> Result<(), Box<dyn std::error::Error>> {
     println!("Generating HTML output at '{}' using format '{}'", path, format);
 
     let mut file = File::create(path)?;
@@ -76,7 +76,7 @@ fn generate_style_content_d3(file: &mut File) -> Result<(), Box<dyn std::error::
     Ok(())
 }
 
-fn generate_script_code(file: &mut File, format: &str, nodes: &[Node], node_dependencies: &[Vec<usize>]) -> Result<(), Box<dyn std::error::Error>> {
+fn generate_script_code(file: &mut File, format: &str, nodes: &[Node], node_dependencies: &NodeDependencies) -> Result<(), Box<dyn std::error::Error>> {
     match format {
         "graphviz" => generate_script_code_graphviz(file, nodes, node_dependencies)?,
         "d3" => generate_script_code_d3(file, nodes, node_dependencies)?,
@@ -85,7 +85,7 @@ fn generate_script_code(file: &mut File, format: &str, nodes: &[Node], node_depe
     Ok(())
 }
 
-fn generate_script_code_graphviz(file: &mut File, nodes: &[Node], node_dependencies: &[Vec<usize>]) -> Result<(), Box<dyn std::error::Error>> {
+fn generate_script_code_graphviz(file: &mut File, nodes: &[Node], node_dependencies: &NodeDependencies) -> Result<(), Box<dyn std::error::Error>> {
     writeln!(file, "<script>")?;
     writeln!(file, "    var viz = new Viz();")?;
     writeln!(file, "    var graphvizData = `")?;
@@ -95,7 +95,7 @@ fn generate_script_code_graphviz(file: &mut File, nodes: &[Node], node_dependenc
     }
     for (index, deps) in node_dependencies.iter().enumerate() {
         for dep in deps {
-            writeln!(file, "    P{} -> P{}", index + 1, dep + 1)?;
+            writeln!(file, "    P{} -> P{}", index + 1, dep.to + 1)?;
         }
     }
     writeln!(file, "}}`;")?;
@@ -131,7 +131,7 @@ fn generate_script_code_graphviz(file: &mut File, nodes: &[Node], node_dependenc
 }
 
 
-fn generate_script_code_d3(file: &mut File, nodes: &[Node], node_dependencies: &[Vec<usize>]) -> Result<(), Box<dyn std::error::Error>>  {
+fn generate_script_code_d3(file: &mut File, nodes: &[Node], node_dependencies: &NodeDependencies) -> Result<(), Box<dyn std::error::Error>>  {
     writeln!(file, "<script src=\"https://d3js.org/d3.v6.min.js\"></script>")?;
     writeln!(file, "<script>")?;
     writeln!(file, "    const svg = d3.select('svg'),")?;
@@ -164,8 +164,8 @@ fn generate_script_code_d3(file: &mut File, nodes: &[Node], node_dependencies: &
     // Generate the links data dynamically
     writeln!(file, "    const links = [")?;
     for (index, dependencies) in node_dependencies.iter().enumerate() {
-        for &target_index in dependencies {
-            writeln!(file, "        {{ source: '{}', target: '{}' }},", nodes[index].id, nodes[target_index].id)?;
+        for target_index in dependencies.iter() {
+            writeln!(file, "        {{ source: '{}', target: '{}' }},", nodes[index].id, nodes[target_index.to].id)?;
         }
     }
     writeln!(file, "    ];")?;
@@ -238,7 +238,7 @@ fn generate_script_code_d3(file: &mut File, nodes: &[Node], node_dependencies: &
     Ok(())
 }
 
-fn generate_body_content(file: &mut File, format: &str, nodes: &[Node], node_dependencies: &[Vec<usize>]) -> Result<(), Box<dyn std::error::Error>> {
+fn generate_body_content(file: &mut File, format: &str, nodes: &[Node], node_dependencies: &NodeDependencies) -> Result<(), Box<dyn std::error::Error>> {
     match format {
         "graphviz" => generate_body_content_graphviz(file, nodes, node_dependencies)?,
         "d3" => generate_body_content_d3(file)?,
@@ -246,7 +246,7 @@ fn generate_body_content(file: &mut File, format: &str, nodes: &[Node], node_dep
     }
     Ok(())
 }
-fn generate_body_content_graphviz(file: &mut File, _nodes: &[Node], _node_dependencies: &[Vec<usize>]) -> Result<(), Box<dyn std::error::Error>> {
+fn generate_body_content_graphviz(file: &mut File, _nodes: &[Node], _node_dependencies: &NodeDependencies) -> Result<(), Box<dyn std::error::Error>> {
     writeln!(file, "            <div id=\"graph-container\">")?;
     writeln!(file, "                <div id=\"graph\"></div>")?;
     writeln!(file, "            </div>")?;
@@ -260,7 +260,7 @@ fn generate_body_content_d3(file: &mut File) -> Result<(), Box<dyn std::error::E
 }
 
 /// Displays basic information about projects and their dependencies
-pub fn display_project_information(projects: &[Node], node_dependencies: &[Vec<usize>]) {
+pub fn display_project_information(projects: &[Node], node_dependencies: &NodeDependencies) {
     println!("Found projects:");
     for (i, project) in projects.iter().enumerate() {
         println!("{}: {:?}", i, project);
@@ -268,13 +268,13 @@ pub fn display_project_information(projects: &[Node], node_dependencies: &[Vec<u
 
     println!("\nProject dependencies:");
     for (i, deps) in node_dependencies.iter().enumerate() {
-        let dep_indices = deps.iter().map(usize::to_string).collect::<Vec<_>>().join(", ");
+        let dep_indices = deps.iter().map(|edge_info| edge_info.to.to_string()).collect::<Vec<_>>().join(", ");
         println!("Project {}: {}", i, dep_indices);
     }
 }
 
 /// Generates a Mermaid diagram based on project dependencies
-pub fn generate_mermaid_diagram(nodes: &[Node], node_dependencies: &[Vec<usize>]) {
+pub fn generate_mermaid_diagram(nodes: &[Node], node_dependencies: &NodeDependencies) {
     println!("```mermaid");
     println!("graph TD;");
     for (index, project) in nodes.iter().enumerate() {
@@ -282,21 +282,21 @@ pub fn generate_mermaid_diagram(nodes: &[Node], node_dependencies: &[Vec<usize>]
     }
     for (index, deps) in node_dependencies.iter().enumerate() {
         for dep in deps {
-            println!("    P{} --> P{}", index + 1, dep + 1);
+            println!("    P{} --> P{}", index + 1, dep.to + 1);
         }
     }
     println!("```");
 }
 
 /// Generates a Graphviz diagram based on project dependencies
-pub fn generate_graphviz_diagram(nodes: &[Node], node_dependencies: &[Vec<usize>]) {
+pub fn generate_graphviz_diagram(nodes: &[Node], node_dependencies: &NodeDependencies) {
     println!("digraph G {{");
     for (index, project) in nodes.iter().enumerate() {
         println!("    P{} [label=\"{}\"]", index + 1, project.name);
     }
     for (index, deps) in node_dependencies.iter().enumerate() {
         for dep in deps {
-            println!("    P{} -> P{}", index + 1, dep + 1);
+            println!("    P{} -> P{}", index + 1, dep.to + 1);
         }
     }
     println!("}}");

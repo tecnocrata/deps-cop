@@ -63,10 +63,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     })?;
 
     let config = load_config(&root_path);
-    println!("Configuration: {:#?}", config);
+    // println!("Configuration: {:#?}", config);
 
     let nodes = ProjectDependencyManager::collect_csharp_projects(&root_path, &config)?;
-    let project_dependencies = ProjectDependencyManager::find_dependencies(&nodes)?;
+    let project_dependencies = ProjectDependencyManager::find_dependencies(&nodes, &config)?;
 
     if matches.is_present("list") {
         display_project_information(&nodes, &project_dependencies);

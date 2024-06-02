@@ -11,16 +11,27 @@ struct Colors {
 }
 
 #[derive(Serialize, Deserialize, Debug, Default)]
-struct Allowed {
+pub struct Allowed {
     core: Vec<String>,
     io: Vec<String>,
     usecase: Vec<String>,
 }
 
+impl Allowed {
+    pub fn get_layers(&self, layer: &str) -> Option<&Vec<String>> {
+        match layer {
+            "core" => Some(&self.core),
+            "io" => Some(&self.io),
+            "usecase" => Some(&self.usecase),
+            _ => None,
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Default)]
-struct Global {
+pub struct Global {
     colors: Colors,
-    allowed: Allowed,
+    pub allowed: Allowed,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -40,7 +51,7 @@ pub struct Csharp {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Config {
-    global: Global,
+    pub global: Global,
     pub csharp: Csharp,
 }
 

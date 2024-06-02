@@ -40,12 +40,21 @@ pub struct Node {
     pub node_type: String // project, namespace, class, folder
 }
 
+#[derive(Debug)]
+pub struct EdgeInfo{
+    pub to: usize,
+    pub allowed: bool,
+    pub label: String,
+}
+pub type EdgesInfo = Vec<EdgeInfo>;
+pub type NodeDependencies = Vec<EdgesInfo>;
+
 pub struct ProjectDependencyManager;
 
 pub trait ProjectDependencies {
     fn collect_csharp_projects(root_path: &Path, config: &Config) -> Result<Vec<Node>, Error>;
-    fn find_dependencies(projects: &[Node]) -> Result<Vec<Vec<usize>>, Error>;
-    fn detect_cycles(projects: &[Node], project_dependencies: &[Vec<usize>]);
+    fn find_dependencies(projects: &[Node], config: &Config) -> Result<NodeDependencies, Error>;
+    fn detect_cycles(nodes: &[Node], node_dependencies: &NodeDependencies);
 }
 
 impl ProjectDependencies for ProjectDependencyManager {
@@ -87,12 +96,14 @@ impl ProjectDependencies for ProjectDependencyManager {
     }
 
     /// Resolves dependencies of each project
-    fn find_dependencies(projects: &[Node]) -> Result<Vec<Vec<usize>>, Error> {
+    fn find_dependencies(projects: &[Node], config: &Config) -> Result<NodeDependencies, Error> {
         let mut project_dependencies = Vec::new();
+    
+        // It creates a map of project id (absolute path) to index in the projects vector (for quick lookup
         let path_index_map: HashMap<String, usize> = projects.iter().enumerate()
             .map(|(index, project)| (project.id.clone(), index))
             .collect();
-
+    
         for project in projects {
             let project_path = Path::new(&project.id); // The id is the absolute path
             let file = File::open(project_path)?;
@@ -104,10 +115,10 @@ impl ProjectDependencies for ProjectDependencyManager {
                     return Err(std::io::Error::new(std::io::ErrorKind::Other, err.to_string()));
                 }
             };
-
-            let mut deps = Vec::new();
+    
+            let mut edges_info = Vec::new();
             let project_dir = project_path.parent().unwrap();
-
+    
             for item_group in &csproj_data.item_groups {
                 for project_reference in &item_group.project_references {
                     let normalized_path = if cfg!(target_os = "windows") {
@@ -119,18 +130,28 @@ impl ProjectDependencies for ProjectDependencyManager {
                     if let Ok(canonical_dep_path) = dep_path.canonicalize() {
                         let dep_path_str = canonical_dep_path.to_str().unwrap();
                         if let Some(&index) = path_index_map.get(dep_path_str) {
-                            deps.push(index);
+                            // Verify if the dependency is allowed
+                            let from_layer = &project.layer;
+                            let to_layer = &projects[index].layer;
+                            static EMPTY_VEC: &Vec<String> = &Vec::new();
+                            let allowed_layers = match &config.global.allowed.get_layers(from_layer) {
+                                Some(layers) => layers,
+                                None => EMPTY_VEC,
+                            };//.unwrap_or(&vec![]);
+                            let ok = allowed_layers.contains(to_layer);
+                            let label = format!("{} -> {}", project.name, projects[index].name);
+                            edges_info.push(EdgeInfo { to: index, allowed: ok, label });
                         }
                     }
                 }
             }
-            project_dependencies.push(deps);
+            project_dependencies.push(edges_info);
         }
-
+    
         Ok(project_dependencies)
     }
 
-    fn detect_cycles(nodes: &[Node], node_dependencies: &[Vec<usize>]) {
+    fn detect_cycles(nodes: &[Node], node_dependencies: &NodeDependencies) {
         let mut has_cycle = false;
         for i in 0..nodes.len() {
             let mut visiting = HashSet::new();
@@ -149,17 +170,17 @@ impl ProjectDependencies for ProjectDependencyManager {
 }
 
 fn determine_layer(name: &str, config: &Config) -> String {
-    println!("analyzed name: {}", name);
+    // println!("analyzed name: {}", name);
     for (layer, pattern) in &config.csharp.projects {
         let patterns = match pattern {
             StringOrVec::String(p) => vec![p.clone()],
             StringOrVec::Vec(ps) => ps.clone(),
         };
-        println!("patterns {:?} -> ", patterns);
+        // println!("patterns {:?} -> ", patterns);
         for pat in patterns {
             if let Ok(re) = Regex::new(&pat) {
                 if re.is_match(name) {
-                    print!("{} -> ", name);
+                    // print!("{} -> ", name);
                     return layer.clone();
                 }
             }
@@ -174,7 +195,7 @@ fn dfs(
     stack: &mut Vec<usize>,
     visiting: &mut HashSet<usize>,
     visited: &mut HashSet<usize>,
-    deps: &[Vec<usize>],
+    deps: &NodeDependencies,
     nodes: &[Node],
 ) -> bool {
     if visiting.contains(&node) {
@@ -195,8 +216,8 @@ fn dfs(
     visiting.insert(node);
     stack.push(node);
 
-    for &next in &deps[node] {
-        if dfs(next, stack, visiting, visited, deps, nodes) {
+    for next in &deps[node] {
+        if dfs(next.to, stack, visiting, visited, deps, nodes) {
             return true;
         }
     }
