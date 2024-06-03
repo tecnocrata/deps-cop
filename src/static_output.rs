@@ -90,6 +90,8 @@ fn generate_script_code_graphviz(file: &mut File, nodes: &[Node], node_dependenc
     writeln!(file, "    var viz = new Viz();")?;
     writeln!(file, "    var graphvizData = `")?;
     writeln!(file, "digraph G {{")?;
+    writeln!(file, "\tnode [color=grey, style=filled];")?;
+    writeln!(file, "\tnode [fontname=\"Verdana\", size=\"30,30\"];")?;
     for (index, node) in nodes.iter().enumerate() {
         writeln!(file, "    P{} [label=\"{}\", style=filled, fillcolor=\"{}\"]", index + 1, node.name, node.color)?;
     }
@@ -291,6 +293,8 @@ pub fn generate_mermaid_diagram(nodes: &[Node], node_dependencies: &NodeDependen
 /// Generates a Graphviz diagram based on project dependencies
 pub fn generate_graphviz_diagram(nodes: &[Node], node_dependencies: &NodeDependencies) {
     println!("digraph G {{");
+    println!("    node [color=grey, style=filled];");
+    println!("    node [fontname=\"Verdana\", size=\"30,30\"];");
     for (index, node) in nodes.iter().enumerate() {
         println!("    P{} [label=\"{}\", style=filled, fillcolor=\"{}\"]", index + 1, node.name, node.color);
     }
