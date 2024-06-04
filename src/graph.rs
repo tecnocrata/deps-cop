@@ -1,4 +1,7 @@
-use std::collections::HashSet;
+use std::{collections::HashSet, path::Path};
+use std::io::Error;
+
+use crate::configuration::Config;
 
 #[derive(Debug)]
 pub struct Node {
@@ -18,6 +21,12 @@ pub struct EdgeInfo{
 }
 pub type EdgesInfo = Vec<EdgeInfo>;
 pub type NodeDependencies = Vec<EdgesInfo>;
+
+pub trait GraphDependencies {
+    fn collect_nodes(root_path: &Path, config: &Config) -> Result<Vec<Node>, Error>;
+    fn find_dependencies(projects: &[Node], config: &Config) -> Result<NodeDependencies, Error>;
+    // fn detect_cycles(nodes: &[Node], node_dependencies: &NodeDependencies);
+}
 
 pub fn detect_cycles(nodes: &[Node], node_dependencies: &NodeDependencies) {
     let mut has_cycle = false;

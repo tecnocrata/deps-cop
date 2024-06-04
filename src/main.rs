@@ -8,8 +8,8 @@ mod static_output;
 mod configuration;
 
 use configuration::load_config;
-use graph::detect_cycles;
-use projects::{ProjectDependencyManager, ProjectDependencies};
+use graph::{detect_cycles, GraphDependencies};
+use projects::ProjectDependencyManager;
 use static_output::{generate_html_output, generate_mermaid_diagram, generate_graphviz_diagram, display_project_information};
 
 
@@ -67,7 +67,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let config = load_config(&root_path);
     // println!("Configuration: {:#?}", config);
 
-    let nodes = ProjectDependencyManager::collect_csharp_projects(&root_path, &config)?;
+    let nodes = ProjectDependencyManager::collect_nodes(&root_path, &config)?;
     let project_dependencies = ProjectDependencyManager::find_dependencies(&nodes, &config)?;
 
     if matches.is_present("list") {
