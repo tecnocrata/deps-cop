@@ -159,7 +159,7 @@ fn generate_script_code_d3(file: &mut File, nodes: &[Node], node_dependencies: &
     // Generate the nodes data dynamically
     writeln!(file, "    const nodes = [")?;
     for node in nodes {
-        writeln!(file, "        {{ id: '{}', name: '{}' }},", node.id, node.name)?;
+        writeln!(file, "        {{ id: '{}', name: '{}', color: '{}' }},", node.id, node.name, node.color)?;
     }
     writeln!(file, "    ];")?;
 
@@ -202,7 +202,9 @@ fn generate_script_code_d3(file: &mut File, nodes: &[Node], node_dependencies: &
                 .on("end", dragended));
 
         node.append("circle")
-            .attr("r", d => 5 + d.incomingLinks * 2);
+            // .attr("r", d => 5 + d.incomingLinks * 2)
+            .attr("r", d => 20)
+            .style("fill", d=> d.color);
 
         node.append("text")
             .attr("x", 8)
