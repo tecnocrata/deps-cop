@@ -4,10 +4,10 @@ use std::io::{BufReader, Error, Read};
 use std::path::Path;
 use path_slash::PathExt;
 use serde::Deserialize;
-use regex::Regex;
+// use regex::Regex;
 use walkdir::WalkDir;
 
-use crate::configuration::{Config, StringOrVec};
+use crate::configuration::{determine_layer, Config};
 use crate::graph::{EdgeInfo, Node, NodeDependencies};
 
 #[derive(Debug, Deserialize, PartialEq)]
@@ -37,7 +37,7 @@ pub struct ProjectDependencyManager;
 pub trait ProjectDependencies {
     fn collect_csharp_projects(root_path: &Path, config: &Config) -> Result<Vec<Node>, Error>;
     fn find_dependencies(projects: &[Node], config: &Config) -> Result<NodeDependencies, Error>;
-    fn detect_cycles(nodes: &[Node], node_dependencies: &NodeDependencies);
+    // fn detect_cycles(nodes: &[Node], node_dependencies: &NodeDependencies);
 }
 
 impl ProjectDependencies for ProjectDependencyManager {
@@ -63,13 +63,13 @@ impl ProjectDependencies for ProjectDependencyManager {
                 };
 
                 let absolute_path = path.to_str().unwrap().to_string();
-                let name = path.file_name().unwrap().to_str().unwrap().to_string();
+                let filename = path.file_name().unwrap().to_str().unwrap().to_string();
 
-                let layer = determine_layer(&name, &config);
+                let layer = determine_layer(&filename, &config.csharp.projects);
                 let color = config.get_color(&layer).unwrap_or(&"gray".to_string()).to_string();
                 projects.push(Node {
                     id: absolute_path,
-                    name,
+                    name: filename,
                     node_type: "project".to_string(),
                     layer,
                     color
@@ -136,79 +136,79 @@ impl ProjectDependencies for ProjectDependencyManager {
         Ok(project_dependencies)
     }
 
-    fn detect_cycles(nodes: &[Node], node_dependencies: &NodeDependencies) {
-        let mut has_cycle = false;
-        for i in 0..nodes.len() {
-            let mut visiting = HashSet::new();
-            let mut visited = HashSet::new();
-            let mut stack = Vec::new();
-            if dfs(i, &mut stack, &mut visiting, &mut visited, node_dependencies, nodes) {
-                println!("Cycle initiated from node: {}", nodes[i].name);
-                has_cycle = true;
-            }
-        }
-        if !has_cycle {
-            println!("No circular dependencies detected.");
-        }
-    }
+    // fn detect_cycles(nodes: &[Node], node_dependencies: &NodeDependencies) {
+    //     let mut has_cycle = false;
+    //     for i in 0..nodes.len() {
+    //         let mut visiting = HashSet::new();
+    //         let mut visited = HashSet::new();
+    //         let mut stack = Vec::new();
+    //         if dfs(i, &mut stack, &mut visiting, &mut visited, node_dependencies, nodes) {
+    //             println!("Cycle initiated from node: {}", nodes[i].name);
+    //             has_cycle = true;
+    //         }
+    //     }
+    //     if !has_cycle {
+    //         println!("No circular dependencies detected.");
+    //     }
+    // }
     
 }
 
-fn determine_layer(name: &str, config: &Config) -> String {
-    // println!("analyzed name: {}", name);
-    for (layer, pattern) in &config.csharp.projects {
-        let patterns = match pattern {
-            StringOrVec::String(p) => vec![p.clone()],
-            StringOrVec::Vec(ps) => ps.clone(),
-        };
-        // println!("patterns {:?} -> ", patterns);
-        for pat in patterns {
-            if let Ok(re) = Regex::new(&pat) {
-                if re.is_match(name) {
-                    // print!("{} -> ", name);
-                    return layer.clone();
-                }
-            }
-        }
-    }
-    "unknown".to_string()
-}
+// fn determine_layer(name: &str, config: &Config) -> String {
+//     // println!("analyzed name: {}", name);
+//     for (layer, pattern) in &config.csharp.projects {
+//         let patterns = match pattern {
+//             StringOrVec::String(p) => vec![p.clone()],
+//             StringOrVec::Vec(ps) => ps.clone(),
+//         };
+//         // println!("patterns {:?} -> ", patterns);
+//         for pat in patterns {
+//             if let Ok(re) = Regex::new(&pat) {
+//                 if re.is_match(name) {
+//                     // print!("{} -> ", name);
+//                     return layer.clone();
+//                 }
+//             }
+//         }
+//     }
+//     "unknown".to_string()
+// }
 
-/// Helper function to perform Depth-First Search (DFS) to detect cycles
-fn dfs(
-    node: usize,
-    stack: &mut Vec<usize>,
-    visiting: &mut HashSet<usize>,
-    visited: &mut HashSet<usize>,
-    deps: &NodeDependencies,
-    nodes: &[Node],
-) -> bool {
-    if visiting.contains(&node) {
-        // Cycle detected, print the cycle
-        let cycle_start_index = stack.iter().position(|&x| x == node).unwrap();
-        println!("Cycle detected in dependencies starting at '{}':", nodes[node].name);
-        for &index in &stack[cycle_start_index..] {
-            print!("{} -> ", nodes[index].name);
-        }
-        println!("{}", nodes[node].name); // Complete the cycle
-        return true;
-    }
+//// Helper function to perform Depth-First Search (DFS) to detect cycles
+// fn dfs(
+//     node: usize,
+//     stack: &mut Vec<usize>,
+//     visiting: &mut HashSet<usize>,
+//     visited: &mut HashSet<usize>,
+//     deps: &NodeDependencies,
+//     nodes: &[Node],
+// ) -> bool {
+//     if visiting.contains(&node) {
+//         // Cycle detected, print the cycle
+//         let cycle_start_index = stack.iter().position(|&x| x == node).unwrap();
+//         println!("Cycle detected in dependencies starting at '{}':", nodes[node].name);
+//         for &index in &stack[cycle_start_index..] {
+//             print!("{} -> ", nodes[index].name);
+//         }
+//         println!("{}", nodes[node].name); // Complete the cycle
+//         return true;
+//     }
 
-    if visited.contains(&node) {
-        return false; // This node has been fully explored
-    }
+//     if visited.contains(&node) {
+//         return false; // This node has been fully explored
+//     }
 
-    visiting.insert(node);
-    stack.push(node);
+//     visiting.insert(node);
+//     stack.push(node);
 
-    for next in &deps[node] {
-        if dfs(next.to, stack, visiting, visited, deps, nodes) {
-            return true;
-        }
-    }
+//     for next in &deps[node] {
+//         if dfs(next.to, stack, visiting, visited, deps, nodes) {
+//             return true;
+//         }
+//     }
 
-    stack.pop();
-    visiting.remove(&node);
-    visited.insert(node);
-    false
-}
+//     stack.pop();
+//     visiting.remove(&node);
+//     visited.insert(node);
+//     false
+// }

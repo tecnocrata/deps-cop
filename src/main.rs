@@ -8,6 +8,7 @@ mod static_output;
 mod configuration;
 
 use configuration::load_config;
+use graph::detect_cycles;
 use projects::{ProjectDependencyManager, ProjectDependencies};
 use static_output::{generate_html_output, generate_mermaid_diagram, generate_graphviz_diagram, display_project_information};
 
@@ -87,7 +88,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     if matches.is_present("detect-cycles") {
-        ProjectDependencyManager::detect_cycles(&nodes, &project_dependencies);
+        detect_cycles(&nodes, &project_dependencies);
     }
 
     Ok(())

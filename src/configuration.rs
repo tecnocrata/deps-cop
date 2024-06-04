@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use figment::{Figment, providers::{Format, Json, Serialized}};
-use std::path::PathBuf;
+use std::{collections::HashMap, path::PathBuf};
+use regex::Regex;
 // use std::env;
 
 #[derive(Serialize, Deserialize, Debug, Default)]
@@ -120,4 +121,24 @@ pub fn load_config(project_path: &PathBuf) -> Config {
         .merge(Json::file(&config_path))
         .extract()
         .unwrap_or_default()
+}
+
+pub fn determine_layer(name: &str, layer_configs: &HashMap<String, StringOrVec>) -> String {
+    // println!("analyzed name: {}", name);
+    for (layer, pattern) in layer_configs {
+        let patterns = match pattern {
+            StringOrVec::String(p) => vec![p.clone()],
+            StringOrVec::Vec(ps) => ps.clone(),
+        };
+        // println!("patterns {:?} -> ", patterns);
+        for pat in patterns {
+            if let Ok(re) = Regex::new(&pat) {
+                if re.is_match(name) {
+                    // print!("{} -> ", name);
+                    return layer.clone();
+                }
+            }
+        }
+    }
+    "unknown".to_string()
 }
