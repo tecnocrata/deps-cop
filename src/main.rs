@@ -2,6 +2,7 @@ use std::path::PathBuf;
 use std::env;
 use clap::{App, Arg, AppSettings};
 
+mod graph;
 mod projects;
 mod static_output;
 mod configuration;

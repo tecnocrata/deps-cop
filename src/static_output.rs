@@ -2,7 +2,7 @@ use std::fs::File;
 use std::io::Write;
 use chrono::Local;
 
-use crate::projects::{Node, NodeDependencies};
+use crate::graph::{Node, NodeDependencies};
 
 pub fn generate_html_output(nodes: &[Node], node_dependencies: &NodeDependencies, path: &str, format: &str) -> Result<(), Box<dyn std::error::Error>> {
     println!("Generating HTML output at '{}' using format '{}'", path, format);
