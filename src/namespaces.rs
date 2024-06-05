@@ -1,44 +1,76 @@
 
 
 impl GraphDependencies for NamespaceDependencyManager {
-    /// Collects CsProject data from .csproj files found under the given root path
+    // Collects Namespaces data from .cs files found under the given root path
     fn collect_nodes(root_path: &Path, config: &Config) -> Result<Vec<Node>, Error> {
-        let mut projects = Vec::new();
+        let mut namespaces = Vec::new();
 
         for entry in WalkDir::new(root_path) {
             let entry = entry?;
             let path = entry.path();
-            if path.extension().map_or(false, |e| e == "csproj") {
+            if path.extension().map_or(false, |e| e == "cs") {
                 let mut file = File::open(path)?;
                 let mut contents = String::new();
                 file.read_to_string(&mut contents)?;
 
-                // Parse XML to check for ToolsVersion
-                let _project: Project = match serde_xml_rs::from_str(&contents) {
-                    Ok(proj) => proj,
-                    Err(err) => {
-                        eprintln!("Failed to parse .csproj file, possible incompatible file: {}, error: {}", path.display(), err);
-                        continue; // Skip this file if parsing fails
-                    }
-                };
+                let namespace = extract_namespace(&contents);
+                if let Some(namespace) = namespace {
+                    let absolute_path = path.to_str().unwrap().to_string();
+                    let filename = path.file_name().unwrap().to_str().unwrap().to_string();
 
-                let absolute_path = path.to_str().unwrap().to_string();
-                let filename = path.file_name().unwrap().to_str().unwrap().to_string();
-
-                let layer = determine_layer(&filename, &config.csharp.projects);
-                let color = config.get_color(&layer).unwrap_or(&"gray".to_string()).to_string();
-                projects.push(Node {
-                    id: absolute_path,
-                    name: filename,
-                    node_type: "project".to_string(),
-                    layer,
-                    color
-                });
+                    let layer = determine_layer(&filename, &config.csharp.namespaces);
+                    let color = config.get_color(&layer).unwrap_or(&"gray".to_string()).to_string();
+                    namespaces.push(Node {
+                        id: absolute_path,
+                        name: namespace,
+                        node_type: "namespace".to_string(),
+                        layer,
+                        color
+                    });
+                }
             }
         }
-    
-        Ok(projects)
+
+        Ok(namespaces)
     }
+
+    // fn collect_nodes(root_path: &Path, config: &Config) -> Result<Vec<Node>, Error> {
+    //     let mut projects = Vec::new();
+
+    //     for entry in WalkDir::new(root_path) {
+    //         let entry = entry?;
+    //         let path = entry.path();
+    //         if path.extension().map_or(false, |e| e == "csproj") {
+    //             let mut file = File::open(path)?;
+    //             let mut contents = String::new();
+    //             file.read_to_string(&mut contents)?;
+
+    //             // Parse XML to check for ToolsVersion
+    //             let _project: Project = match serde_xml_rs::from_str(&contents) {
+    //                 Ok(proj) => proj,
+    //                 Err(err) => {
+    //                     eprintln!("Failed to parse .csproj file, possible incompatible file: {}, error: {}", path.display(), err);
+    //                     continue; // Skip this file if parsing fails
+    //                 }
+    //             };
+
+    //             let absolute_path = path.to_str().unwrap().to_string();
+    //             let filename = path.file_name().unwrap().to_str().unwrap().to_string();
+
+    //             let layer = determine_layer(&filename, &config.csharp.projects);
+    //             let color = config.get_color(&layer).unwrap_or(&"gray".to_string()).to_string();
+    //             projects.push(Node {
+    //                 id: absolute_path,
+    //                 name: filename,
+    //                 node_type: "project".to_string(),
+    //                 layer,
+    //                 color
+    //             });
+    //         }
+    //     }
+    
+    //     Ok(projects)
+    // }
 
     /// Resolves dependencies of each project
     fn find_dependencies(projects: &[Node], config: &Config) -> Result<NodeDependencies, Error> {
