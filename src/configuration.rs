@@ -47,7 +47,7 @@ pub struct Csharp {
     pattern: String,
     case_sensitive: String,
     pub projects: std::collections::HashMap<String, StringOrVec>,
-    namespaces: std::collections::HashMap<String, String>,
+    pub namespaces: std::collections::HashMap<String, StringOrVec>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -103,9 +103,9 @@ impl Default for Config {
                 .cloned()
                 .collect(),
                 namespaces: [
-                    ("core".to_string(), ".*\\.Entities\\..*".to_string()),
-                    ("io".to_string(), ".*\\.IO\\..*".to_string()),
-                    ("usecase".to_string(), ".*\\.UseCase\\..*".to_string()),
+                    ("core".to_string(), StringOrVec::String(".*\\.Entities\\..*".to_string())),
+                    ("io".to_string(), StringOrVec::String(".*\\.IO\\..*".to_string())),
+                    ("usecase".to_string(), StringOrVec::String(".*\\.UseCase\\..*".to_string())),
                 ]
                 .iter()
                 .cloned()
