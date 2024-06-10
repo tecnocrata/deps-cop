@@ -19,6 +19,11 @@
                 "io": ".*\\.IO.*\\.csproj$",
                 "usecase": ".*\\.UseCase.*\\.csproj$"
         },
+        "projectExclude": {
+            "core": [],
+            "io": [],
+            "usecase": []
+        },
         "namespaces": {
             "core": ".*\\.Entities\\..*",
             "io": ".*\\.IO\\..*",

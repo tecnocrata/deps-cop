@@ -81,15 +81,15 @@ impl GraphDependencies for ProjectDependencyManager {
     }
 
     /// Resolves dependencies of each project
-    fn find_dependencies(projects: &[Node], config: &Config) -> Result<NodeDependencies, Error> {
-        let mut project_dependencies = Vec::new();
+    fn find_dependencies(nodes: &[Node], config: &Config) -> Result<NodeDependencies, Error> {
+        let mut node_dependencies = Vec::new();
     
         // It creates a map of project id (absolute path) to index in the projects vector (for quick lookup
-        let path_index_map: HashMap<String, usize> = projects.iter().enumerate()
+        let path_index_map: HashMap<String, usize> = nodes.iter().enumerate()
             .map(|(index, project)| (project.id.clone(), index))
             .collect();
     
-        for project in projects {
+        for project in nodes {
             let project_path = Path::new(&project.id); // The id is the absolute path
             let file = File::open(project_path)?;
             let file_reader = BufReader::new(file);
@@ -117,98 +117,23 @@ impl GraphDependencies for ProjectDependencyManager {
                         if let Some(&index) = path_index_map.get(dep_path_str) {
                             // Verify if the dependency is allowed
                             let from_layer = &project.layer;
-                            let to_layer = &projects[index].layer;
+                            let to_layer = &nodes[index].layer;
                             static EMPTY_VEC: &Vec<String> = &Vec::new();
                             let allowed_layers = match &config.global.allowed.get_layers(from_layer) {
                                 Some(layers) => layers,
                                 None => EMPTY_VEC,
                             };//.unwrap_or(&vec![]);
                             let ok = allowed_layers.contains(to_layer);
-                            let label = format!("{} -> {}", project.name, projects[index].name);
+                            let label = format!("{} -> {}", project.name, nodes[index].name);
                             edges_info.push(EdgeInfo { to: index, allowed: ok, label });
                         }
                     }
                 }
             }
-            project_dependencies.push(edges_info);
+            node_dependencies.push(edges_info);
         }
     
-        Ok(project_dependencies)
+        Ok(node_dependencies)
     }
-
-    // fn detect_cycles(nodes: &[Node], node_dependencies: &NodeDependencies) {
-    //     let mut has_cycle = false;
-    //     for i in 0..nodes.len() {
-    //         let mut visiting = HashSet::new();
-    //         let mut visited = HashSet::new();
-    //         let mut stack = Vec::new();
-    //         if dfs(i, &mut stack, &mut visiting, &mut visited, node_dependencies, nodes) {
-    //             println!("Cycle initiated from node: {}", nodes[i].name);
-    //             has_cycle = true;
-    //         }
-    //     }
-    //     if !has_cycle {
-    //         println!("No circular dependencies detected.");
-    //     }
-    // }
     
 }
-
-// fn determine_layer(name: &str, config: &Config) -> String {
-//     // println!("analyzed name: {}", name);
-//     for (layer, pattern) in &config.csharp.projects {
-//         let patterns = match pattern {
-//             StringOrVec::String(p) => vec![p.clone()],
-//             StringOrVec::Vec(ps) => ps.clone(),
-//         };
-//         // println!("patterns {:?} -> ", patterns);
-//         for pat in patterns {
-//             if let Ok(re) = Regex::new(&pat) {
-//                 if re.is_match(name) {
-//                     // print!("{} -> ", name);
-//                     return layer.clone();
-//                 }
-//             }
-//         }
-//     }
-//     "unknown".to_string()
-// }
-
-//// Helper function to perform Depth-First Search (DFS) to detect cycles
-// fn dfs(
-//     node: usize,
-//     stack: &mut Vec<usize>,
-//     visiting: &mut HashSet<usize>,
-//     visited: &mut HashSet<usize>,
-//     deps: &NodeDependencies,
-//     nodes: &[Node],
-// ) -> bool {
-//     if visiting.contains(&node) {
-//         // Cycle detected, print the cycle
-//         let cycle_start_index = stack.iter().position(|&x| x == node).unwrap();
-//         println!("Cycle detected in dependencies starting at '{}':", nodes[node].name);
-//         for &index in &stack[cycle_start_index..] {
-//             print!("{} -> ", nodes[index].name);
-//         }
-//         println!("{}", nodes[node].name); // Complete the cycle
-//         return true;
-//     }
-
-//     if visited.contains(&node) {
-//         return false; // This node has been fully explored
-//     }
-
-//     visiting.insert(node);
-//     stack.push(node);
-
-//     for next in &deps[node] {
-//         if dfs(next.to, stack, visiting, visited, deps, nodes) {
-//             return true;
-//         }
-//     }
-
-//     stack.pop();
-//     visiting.remove(&node);
-//     visited.insert(node);
-//     false
-// }
