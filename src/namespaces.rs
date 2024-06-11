@@ -1,21 +1,20 @@
 use std::collections::HashMap;
 use std::fs::File;
-use std::io::{BufReader, Error, Read};
+use std::io::{Error, Read};
 use std::path::Path;
-use path_slash::PathExt;
-// use regex::Regex;
 use walkdir::WalkDir;
 
 use crate::configuration::{determine_layer, Config};
-use crate::graph::{EdgeInfo, EdgesInfo,  Node, NodeDependencies};
+use crate::graph::{EdgeInfo, Node, NodeDependencies};
 
 pub struct NamespaceDependencyManager;
 
 impl NamespaceDependencyManager {
 
-    fn collect_nodes(root_path: &Path, config: &Config) -> Result<Vec<Node>, Error> {
+    pub fn collect_nodes(root_path: &Path, config: &Config) -> Result<Vec<Node>, Error> {
         let mut namespaces: HashMap<String, Node> = HashMap::new();
         let mut namespace_files = Vec::new();
+    
         for entry in WalkDir::new(root_path) {
             let entry = entry?;
             let path = entry.path();
@@ -29,50 +28,53 @@ impl NamespaceDependencyManager {
             let mut contents = String::new();
             file.read_to_string(&mut contents)?;
     
-            let mut current_namespace = String::new();
-    
             for line in contents.lines() {
+                // let mut current_namespace = String::new();
                 if line.starts_with("namespace") {
                     let parts: Vec<&str> = line.split_whitespace().collect();
-                    current_namespace = parts[1].to_string();
+                    if let Some(ns) = parts.get(1) {
+                        let current_namespace = ns.trim_end_matches(';').to_string();
     
-                    if !namespaces.contains_key(&current_namespace) {
-                        let layer = determine_layer(&current_namespace, &config.csharp.namespaces);
-                        let color = config.get_color(&layer).unwrap_or(&"gray".to_string()).to_string();
-                        namespaces.insert(current_namespace.clone(), Node {
-                            id: current_namespace.clone(),
-                            name: current_namespace.clone(),
-                            node_type: "namespace".to_string(),
-                            layer,
-                            color,
-                        });
+                        if !namespaces.contains_key(&current_namespace) {
+                            let layer = determine_layer(&current_namespace, &config.csharp.namespaces);
+                            let color = config.get_color(&layer).unwrap_or(&"gray".to_string()).to_string();
+                            namespaces.insert(current_namespace.clone(), Node {
+                                id: current_namespace.clone(),
+                                name: current_namespace.clone(),
+                                node_type: "namespace".to_string(),
+                                layer,
+                                color,
+                            });
+                        }
                     }
-                } else if line.starts_with("using") {
+                } else if line.trim_start().starts_with("using") {
                     let parts: Vec<&str> = line.split_whitespace().collect();
-                    let namespace = parts[1].replace(";", "");
+                    if let Some(ns) = parts.get(1) {
+                        let namespace = ns.trim_end_matches(';').to_string();
     
-                    if !namespaces.contains_key(&namespace) {
-                        let layer = determine_layer(&namespace, &config.csharp.namespaces);
-                        let color = config.get_color(&layer).unwrap_or(&"gray".to_string()).to_string();
-                        namespaces.insert(namespace.clone(), Node {
-                            id: namespace.clone(),
-                            name: namespace.clone(),
-                            node_type: "namespace".to_string(),
-                            layer,
-                            color,
-                        });
+                        if !namespaces.contains_key(&namespace) {
+                            let layer = determine_layer(&namespace, &config.csharp.namespaces);
+                            let color = config.get_color(&layer).unwrap_or(&"gray".to_string()).to_string();
+                            namespaces.insert(namespace.clone(), Node {
+                                id: namespace.clone(),
+                                name: namespace.clone(),
+                                node_type: "namespace".to_string(),
+                                layer,
+                                color,
+                            });
+                        }
                     }
                 }
             }
         }
-
+    
         let nodes: Vec<Node> = namespaces.into_values().collect();
     
         Ok(nodes)
     }
 
     // Resolves dependencies of each project
-    fn find_dependencies(root_path: &Path, nodes: &[Node], config: &Config) -> Result<NodeDependencies, Error> {
+    pub fn find_dependencies(root_path: &Path, nodes: &[Node], config: &Config) -> Result<NodeDependencies, Error> {
         let mut node_dependencies = Vec::new();
         let mut namespace_files = Vec::new();
     
