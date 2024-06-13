@@ -6,9 +6,11 @@ mod graph;
 mod projects;
 mod static_output;
 mod configuration;
+mod namespaces;
 
 use configuration::load_config;
-use graph::{detect_cycles, GraphDependencies};
+use namespaces::NamespaceDependencyManager;
+use graph::{detect_cycles, GraphDependencies, Node, NodeDependencies};
 use projects::ProjectDependencyManager;
 use static_output::{generate_html_output, generate_mermaid_diagram, generate_graphviz_diagram, display_project_information};
 
@@ -16,10 +18,10 @@ use static_output::{generate_html_output, generate_mermaid_diagram, generate_gra
 // Main entry point of the application
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let matches = App::new("Dependency Analyzer Cop")
-        .version("0.1.44")
+        .version("0.1.45")
         .mut_arg("version", |a| a.short('v'))  // It shows the version with -v
         .author("tecnocrata <")
-        .about("Analyzes dependencies from C# project files for now")
+        .about("Analyzes dependencies from project files")
         .setting(AppSettings::ArgRequiredElseHelp)  // it shows the help if no arguments are provided
         .arg(Arg::new("folder")
              .long("folder")
@@ -47,6 +49,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
              .long("detect-cycles")
              .help("Detects cycles in project dependencies")
              .requires("folder"))
+        .arg(Arg::new("analysis")
+             .long("analysis")
+             .short('a')
+             .value_name("TYPE")
+             .help("Specifies the analysis type (default: 'csharp:projects')")
+             .takes_value(true)
+             .default_value("csharp:projects")
+             .requires("folder"))
         .get_matches();
 
     // Get the current directory
@@ -67,20 +77,50 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let config = load_config(&root_path);
     // println!("Configuration: {:#?}", config);
 
-    let nodes = ProjectDependencyManager::collect_nodes(&root_path, &config)?;
-    let project_dependencies = ProjectDependencyManager::find_dependencies(&nodes, &config)?;
+    let analysis = matches.value_of("analysis").unwrap();
 
+    match analysis {
+        "csharp:projects" => {
+            let nodes = ProjectDependencyManager::collect_nodes(&root_path, &config)?;
+            let project_dependencies = ProjectDependencyManager::find_dependencies(&nodes, &config)?;
+
+            common_analysis_tasks(&matches, &nodes, &project_dependencies)?;
+        }
+        "csharp:namespaces" => {
+            let nodes = NamespaceDependencyManager::collect_nodes(&root_path, &config)?;
+            let namespace_dependencies = NamespaceDependencyManager::find_dependencies(&root_path, &nodes, &config)?;
+
+            common_analysis_tasks(&matches, &nodes, &namespace_dependencies)?;
+        }
+        // "javascript:folders" => {
+        //     let folder_dependencies = JavaScriptDependencyManager::find_folder_dependencies(&root_path, &config)?;
+
+        //     common_analysis_tasks(&matches, &folder_dependencies.nodes, &folder_dependencies.dependencies)?;
+        // }
+        _ => {
+            eprintln!("Unsupported analysis type. Please specify 'csharp:projects', 'csharp:namespaces', or 'javascript:folders'.");
+        }
+    }
+
+    Ok(())
+}
+
+
+fn common_analysis_tasks(matches: &clap::ArgMatches, nodes: &[Node], dependencies: &NodeDependencies) -> Result<(), Box<dyn std::error::Error>> {
+    // display the number of elements that nodes and dependencies have
+    println!("Nodes: {}", nodes.len());
+    println!("Dependencies: {}", dependencies.len());
     if matches.is_present("list") {
-        display_project_information(&nodes, &project_dependencies);
+        display_project_information(&nodes, &dependencies);
     }
 
     if let Some(format) = matches.value_of("output") {
         if let Some(html_path) = matches.value_of("output-html") {
-            generate_html_output(&nodes, &project_dependencies, html_path, format)?;
+            generate_html_output(&nodes, &dependencies, html_path, format)?;
         } else {
             match format {
-                "mermaid" => generate_mermaid_diagram(&nodes, &project_dependencies),
-                "graphviz" => generate_graphviz_diagram(&nodes, &project_dependencies),
+                "mermaid" => generate_mermaid_diagram(&nodes, &dependencies),
+                "graphviz" => generate_graphviz_diagram(&nodes, &dependencies),
                 "d3" => eprintln!("D3 output is only available for HTML output."),
                 _ => eprintln!("Invalid format. Use 'mermaid' or 'graphviz'."),
             }
@@ -88,9 +128,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     if matches.is_present("detect-cycles") {
-        detect_cycles(&nodes, &project_dependencies);
+        detect_cycles(&nodes, &dependencies);
     }
 
     Ok(())
 }
-
