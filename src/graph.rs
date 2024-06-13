@@ -14,6 +14,7 @@ pub struct Node {
 }
 
 #[derive(Debug)]
+#[derive(Clone)]
 pub struct EdgeInfo{
     pub to: usize,
     pub allowed: bool,

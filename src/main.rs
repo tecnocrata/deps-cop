@@ -107,6 +107,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 
 fn common_analysis_tasks(matches: &clap::ArgMatches, nodes: &[Node], dependencies: &NodeDependencies) -> Result<(), Box<dyn std::error::Error>> {
+    // display the number of elements that nodes and dependencies have
+    println!("Nodes: {}", nodes.len());
+    println!("Dependencies: {}", dependencies.len());
     if matches.is_present("list") {
         display_project_information(&nodes, &dependencies);
     }
