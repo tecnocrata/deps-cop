@@ -1,24 +1,20 @@
 use std::collections::HashMap;
 use std::fs::File;
-use std::io::{BufReader, Error, Read};
+use std::io::{Error, Read};
 use std::path::Path;
-use path_slash::PathExt;
-// use regex::Regex;
 use walkdir::WalkDir;
 
 use crate::configuration::{determine_layer, Config};
-use crate::graph::{EdgeInfo, EdgesInfo,  Node, NodeDependencies};
+use crate::graph::{EdgeInfo, Node, NodeDependencies};
 
 pub struct NamespaceDependencyManager;
 
 impl NamespaceDependencyManager {
-    // Collects C# Namespaces data from .cs files found under the given root path. it will get the namespaces from using and namespace declarations
-    // it is needed to consider newer namespace deplarations that does not enclose the class declaration.
-    fn build_graph(root_path: &Path, config: &Config) -> Result<(Vec<Node>, NodeDependencies), Error> {
-        let mut namespaces: HashMap<String,Node> = HashMap::new();
-        let mut namespaces_dependencies: HashMap<String,EdgesInfo> = HashMap::new();
-        let mut namespace_files = Vec::new();
 
+    pub fn collect_nodes(root_path: &Path, config: &Config) -> Result<Vec<Node>, Error> {
+        let mut namespaces: HashMap<String, Node> = HashMap::new();
+        let mut namespace_files = Vec::new();
+    
         for entry in WalkDir::new(root_path) {
             let entry = entry?;
             let path = entry.path();
@@ -26,169 +22,144 @@ impl NamespaceDependencyManager {
                 namespace_files.push(path.to_path_buf());
             }
         }
-
+    
         for file in namespace_files {
+            //get the filename
+            let filename = file.file_name().unwrap().to_str().unwrap();
+            println!("Collecting nodes from file: {}", filename);
             let mut file = File::open(&file)?;
             let mut contents = String::new();
             file.read_to_string(&mut contents)?;
-
-            
-            // let mut using_namespaces = Vec::new();
-
+    
             for line in contents.lines() {
-                let mut namespace = String::new();
-                let mut parent_namespace = false;
+                // let mut current_namespace = String::new();
                 if line.starts_with("namespace") {
                     let parts: Vec<&str> = line.split_whitespace().collect();
-                    namespace = parts[1].to_string();
-                    parent_namespace = true;
-                } else if line.starts_with("using") {
+                    if let Some(ns) = parts.get(1) {
+                        let current_namespace = ns.trim_end_matches(';').to_string();
+    
+                        if !namespaces.contains_key(&current_namespace) {
+                            let layer = determine_layer(&current_namespace, &config.csharp.namespaces);
+                            let color = config.get_color(&layer).unwrap_or(&"gray".to_string()).to_string();
+                            namespaces.insert(current_namespace.clone(), Node {
+                                id: current_namespace.clone(),
+                                name: current_namespace.clone(),
+                                node_type: "namespace".to_string(),
+                                layer,
+                                color,
+                            });
+                        }
+                    }
+                } else if line.trim_start().starts_with("using") {
                     let parts: Vec<&str> = line.split_whitespace().collect();
-                    let namespace = parts[1].replace(";", "");
-                }
-                if !namespaces.contains_key(namespace.as_str()){
-                    let layer = determine_layer(&namespace, &config.csharp.namespaces);
-                    let color = config.get_color(&layer).unwrap_or(&"gray".to_string()).to_string();
-                    namespaces.insert(namespace.clone(), Node {
-                        id: namespace.clone(),
-                        name: namespace.clone(),
-                        node_type: "namespace".to_string(),
-                        layer,
-                        color
-                    });
-                }
-                if parent_namespace {
-                    if !namespaces_dependencies.contains_key(namespace.as_str()){
-                        namespaces_dependencies.insert(namespace.clone(), Vec::new());
+                    if let Some(ns) = parts.get(1) {
+                        let namespace = ns.trim_end_matches(';').to_string();
+    
+                        if !namespaces.contains_key(&namespace) {
+                            let layer = determine_layer(&namespace, &config.csharp.namespaces);
+                            let color = config.get_color(&layer).unwrap_or(&"gray".to_string()).to_string();
+                            namespaces.insert(namespace.clone(), Node {
+                                id: namespace.clone(),
+                                name: namespace.clone(),
+                                node_type: "namespace".to_string(),
+                                layer,
+                                color,
+                            });
+                        }
                     }
                 }
-                else{
-
-                }
             }
-
-            // let absolute_path = file.to_str().unwrap().to_string();
-            // let filename = file.file_name().unwrap().to_str().unwrap().to_string();
-
-            // let layer = determine_layer(&namespace, &config.csharp.namespaces);
-            // let color = config.get_color(&layer).unwrap_or(&"gray".to_string()).to_string();
-            // namespaces.push(Node {
-            //     id: namespace,
-            //     name: namespace,
-            //     node_type: "namespace".to_string(),
-            //     layer,
-            //     color
-            // });
-
-            // for using_namespace in using_namespaces {
-            //     let layer = determine_layer(&using_namespace, &config.csharp.namespaces);
-            //     let color = config.get_color(&layer).unwrap_or(&"gray".to_string()).to_string();
-            //     namespaces.push(Node {
-            //         id: using_namespace,
-            //         name: using_namespace,
-            //         node_type: "namespace".to_string(),
-            //         layer,
-            //         color
-            //     });
-            // }
         }
-
-        Ok(namespaces)
+        let global_namespace = "global::namespace";
+        namespaces.insert(global_namespace.to_string(), Node {
+            id: global_namespace.to_string(),
+            name: global_namespace.to_string(),
+            node_type: "namespace".to_string(),
+            layer: "unknown".to_string(),
+            color: "gray".to_string(),
+        });
+    
+        let nodes: Vec<Node> = namespaces.into_values().collect();
+    
+        Ok(nodes)
     }
 
+    // Resolves dependencies of each project
+    pub fn find_dependencies(root_path: &Path, nodes: &[Node], config: &Config) -> Result<NodeDependencies, Error> {
+        let mut node_dependencies: NodeDependencies = vec![Vec::new(); nodes.len()];
+        let mut namespace_files = Vec::new();
     
-
-    // fn collect_nodes(root_path: &Path, config: &Config) -> Result<Vec<Node>, Error> {
-    //     let mut projects = Vec::new();
-
-    //     for entry in WalkDir::new(root_path) {
-    //         let entry = entry?;
-    //         let path = entry.path();
-    //         if path.extension().map_or(false, |e| e == "csproj") {
-    //             let mut file = File::open(path)?;
-    //             let mut contents = String::new();
-    //             file.read_to_string(&mut contents)?;
-
-    //             // Parse XML to check for ToolsVersion
-    //             let _project: Project = match serde_xml_rs::from_str(&contents) {
-    //                 Ok(proj) => proj,
-    //                 Err(err) => {
-    //                     eprintln!("Failed to parse .csproj file, possible incompatible file: {}, error: {}", path.display(), err);
-    //                     continue; // Skip this file if parsing fails
-    //                 }
-    //             };
-
-    //             let absolute_path = path.to_str().unwrap().to_string();
-    //             let filename = path.file_name().unwrap().to_str().unwrap().to_string();
-
-    //             let layer = determine_layer(&filename, &config.csharp.projects);
-    //             let color = config.get_color(&layer).unwrap_or(&"gray".to_string()).to_string();
-    //             projects.push(Node {
-    //                 id: absolute_path,
-    //                 name: filename,
-    //                 node_type: "project".to_string(),
-    //                 layer,
-    //                 color
-    //             });
-    //         }
-    //     }
+        for entry in WalkDir::new(root_path) {
+            let entry = entry?;
+            let path = entry.path();
+            if path.extension().map_or(false, |e| e == "cs") {
+                namespace_files.push(path.to_path_buf());
+            }
+        }
     
-    //     Ok(projects)
-    // }
-
-    //// Resolves dependencies of each project
-    // fn find_dependencies(projects: &[Node], config: &Config) -> Result<NodeDependencies, Error> {
-    //     let mut project_dependencies = Vec::new();
+        // Create a map of project id (absolute path) to index in the projects vector (for quick lookup)
+        let node_index_map: HashMap<String, usize> = nodes.iter().enumerate()
+            .map(|(index, project)| (project.id.clone(), index))
+            .collect();
     
-    //     // It creates a map of project id (absolute path) to index in the projects vector (for quick lookup
-    //     let path_index_map: HashMap<String, usize> = projects.iter().enumerate()
-    //         .map(|(index, project)| (project.id.clone(), index))
-    //         .collect();
+        for file in namespace_files {
+            let filename = file.file_name().unwrap().to_str().unwrap();
+            println!("Collecting dependencies from file: {}", filename);
+            let mut file = File::open(&file)?;
+            // let reader = BufReader::new(file);
+            let mut contents = String::new();
+            file.read_to_string(&mut contents)?;
     
-    //     for project in projects {
-    //         let project_path = Path::new(&project.id); // The id is the absolute path
-    //         let file = File::open(project_path)?;
-    //         let file_reader = BufReader::new(file);
-    //         let csproj_data: Project = match serde_xml_rs::from_reader(file_reader) {
-    //             Ok(data) => data,
-    //             Err(err) => {
-    //                 eprintln!("Failed to parse .csproj file: {}", project.id);
-    //                 return Err(std::io::Error::new(std::io::ErrorKind::Other, err.to_string()));
-    //             }
-    //         };
+            // let mut parent_namespace = String::new();
+            let mut edges_info = Vec::new();
+            let mut from_node_index: Option<usize> = None;
     
-    //         let mut edges_info = Vec::new();
-    //         let project_dir = project_path.parent().unwrap();
+            for line in contents.lines() {
+                // let line = line?;
+                if line.trim_start().starts_with("namespace") {
+                    let parts: Vec<&str> = line.split_whitespace().collect();
+                    if let Some(ns) = parts.get(1) {
+                        let parent_namespace = ns.trim_end_matches(';').to_string();
+                        from_node_index = node_index_map.get(&parent_namespace).map(|&i| i);
+                    }
+                } else if line.trim_start().starts_with("using") {
+                    let parts: Vec<&str> = line.split_whitespace().collect();
+                    if let Some(child_ns) = parts.get(1) {
+                        let child_namespace = child_ns.trim_end_matches(';').to_string();
     
-    //         for item_group in &csproj_data.item_groups {
-    //             for project_reference in &item_group.project_references {
-    //                 let normalized_path = if cfg!(target_os = "windows") {
-    //                     Path::new(&project_reference.include).to_slash().unwrap()
-    //                 } else {
-    //                     project_reference.include.replace("\\", "/")
-    //                 };
-    //                 let dep_path = project_dir.join(normalized_path);
-    //                 if let Ok(canonical_dep_path) = dep_path.canonicalize() {
-    //                     let dep_path_str = canonical_dep_path.to_str().unwrap();
-    //                     if let Some(&index) = path_index_map.get(dep_path_str) {
-    //                         // Verify if the dependency is allowed
-    //                         let from_layer = &project.layer;
-    //                         let to_layer = &projects[index].layer;
-    //                         static EMPTY_VEC: &Vec<String> = &Vec::new();
-    //                         let allowed_layers = match &config.global.allowed.get_layers(from_layer) {
-    //                             Some(layers) => layers,
-    //                             None => EMPTY_VEC,
-    //                         };//.unwrap_or(&vec![]);
-    //                         let ok = allowed_layers.contains(to_layer);
-    //                         let label = format!("{} -> {}", project.name, projects[index].name);
-    //                         edges_info.push(EdgeInfo { to: index, allowed: ok, label });
-    //                     }
-    //                 }
-    //             }
-    //         }
-    //         project_dependencies.push(edges_info);
-    //     }
+                        if let Some(&index) = node_index_map.get(&child_namespace) {
+                            // let parent_layer = &parent_namespace;
+                            let to_layer = &nodes[index].layer;
+                            // let allowed_layers = config.global.allowed.get_layers(parent_layer).cloned().unwrap_or_else(Vec::new);
+                            let allowed_layers = config.global.allowed.get_layers(to_layer).cloned().unwrap_or_else(Vec::new);
+                            let ok = allowed_layers.contains(to_layer);
+                            let label = format!("to -> {}", nodes[index].name);
+                            edges_info.push(EdgeInfo { to: index, allowed: ok, label });
+                        }
+                    }
+                }
+            }
+            let index = if let Some(index) = from_node_index {
+                //we need to update all the edges_info with the correct ok value because we need to retrieve the parent's layer and check if it is allowed to access the child's layer
+                for edge in &mut node_dependencies[index] {
+                    let parent_layer = &nodes[index].layer;
+                    let to_layer = &nodes[edge.to].layer;
+                    let allowed_layers = config.global.allowed.get_layers(parent_layer).cloned().unwrap_or_else(Vec::new);
+                    edge.allowed = allowed_layers.contains(to_layer);
+                }
+                index
+            } else {
+                nodes.len() - 1
+            };
+            // get the current node_dependencies[index] and before to add the new edges_info, we need to remove the duplicates, considering the already existing ones
+            let current_edges = &node_dependencies[index];
+            // filter and remove based on the 'to' property
+            let edges_info: Vec<EdgeInfo> = edges_info.into_iter().filter(|edge| !current_edges.iter().any(|e| e.to == edge.to)).collect();
+            // add the resulting fildered edges_info to the current node_dependencies[index]
+            node_dependencies[index].extend(edges_info);
+        }
     
-    //     Ok(project_dependencies)
-    // }    
+        Ok(node_dependencies)
+    }    
+    
 }
