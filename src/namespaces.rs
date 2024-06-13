@@ -151,7 +151,11 @@ impl NamespaceDependencyManager {
             } else {
                 nodes.len() - 1
             };
-
+            // get the current node_dependencies[index] and before to add the new edges_info, we need to remove the duplicates, considering the already existing ones
+            let current_edges = &node_dependencies[index];
+            // filter and remove based on the 'to' property
+            let edges_info: Vec<EdgeInfo> = edges_info.into_iter().filter(|edge| !current_edges.iter().any(|e| e.to == edge.to)).collect();
+            // add the resulting fildered edges_info to the current node_dependencies[index]
             node_dependencies[index].extend(edges_info);
         }
     
