@@ -10,7 +10,7 @@
 - **Cycle Detection:** Identifies and reports circular dependencies among projects.
 - **Cross-Platform:** Runs on Windows, macOS, and Linux.
 
-## Installation
+## Installation from source code
 
 To install `depscop`, you need Rust's package manager, Cargo. You can install Rust and Cargo via [rustup](https://rustup.rs/):
 
