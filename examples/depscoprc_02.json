@@ -14,10 +14,11 @@
     "csharp": {
         "pattern": "wildcard",
         "caseSensitive": "false",
+        "excludeFolders": ["bin", "obj"],
         "projects":{
-                "core": "*Entities*.csproj$",
-                "io": ["*IO*.csproj$","Csd.Api.csproj"],
-                "usecase": "*UseCase*.csproj$"
+            "core": "*Entities*.csproj$",
+            "io": ["*IO*.csproj$","Csd.Api.csproj"],
+            "usecase": "*UseCases*.csproj$"
         },
         "namespaces": {
             "core": "*Entities*",
@@ -28,6 +29,7 @@
     "javascript":{
         "pattern":"wildcard",
         "caseSensitive":"false",
+        "excludeFolders":["node_modules"],
         "folders":{
             "core":"*Entities*",
             "io":"*IO*",

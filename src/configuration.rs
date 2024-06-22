@@ -97,7 +97,7 @@ impl Default for Config {
                 projects: [
                     ("core".to_string(), StringOrVec::String(r".*\.Entities.*\.csproj$".to_string())),
                     ("io".to_string(), StringOrVec::String(r".*\.IO.*\.csproj$".to_string())),
-                    ("usecase".to_string(), StringOrVec::String(r".*\.UseCase.*\.csproj$".to_string())),
+                    ("usecase".to_string(), StringOrVec::String(r".*\.UseCases.*\.csproj$".to_string())),
                 ]
                 .iter()
                 .cloned()
