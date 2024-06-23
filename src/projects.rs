@@ -7,7 +7,7 @@ use serde::Deserialize;
 // use regex::Regex;
 use walkdir::WalkDir;
 
-use crate::configuration::{determine_layer, Config};
+use crate::configuration::{determine_layer, should_exclude, Config};
 use crate::graph::{EdgeInfo, GraphDependencies, Node, NodeDependencies};
 
 #[derive(Debug, Deserialize, PartialEq)]
@@ -48,6 +48,9 @@ impl GraphDependencies for ProjectDependencyManager {
         for entry in WalkDir::new(root_path) {
             let entry = entry?;
             let path = entry.path();
+            if should_exclude(&path.to_path_buf(), &config.csharp.exclude_folders) {
+                continue;
+            }
             if path.extension().map_or(false, |e| e == "csproj") {
                 let mut file = File::open(path)?;
                 let mut contents = String::new();

@@ -152,7 +152,7 @@ pub fn determine_layer(name: &str, layer_configs: &HashMap<String, StringOrVec>,
     "unknown".to_string()
 }
 
-fn should_exclude(path: &PathBuf, exclude_folders: &Vec<String>) -> bool {
+pub fn should_exclude(path: &PathBuf, exclude_folders: &Vec<String>) -> bool {
     for folder in exclude_folders {
         if path.to_str().map_or(false, |p| p.contains(folder)) {
             return true;
