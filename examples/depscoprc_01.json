@@ -13,9 +13,9 @@
     },
     "csharp": {
         "pattern": "regex",
-        "caseSensitive": "true",
-        "excludeFolders": ["bin", "obj"],
-        "projects":{
+        "case_sensitive": true,
+        "exclude_folders": ["bin", "obj"],
+        "projects": {
             "core": ".*\\.Entities.*\\.csproj$",
             "io": ".*\\.IO.*\\.csproj$",
             "usecase": ".*\\.UseCases.*\\.csproj$"

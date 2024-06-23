@@ -65,7 +65,7 @@ impl GraphDependencies for ProjectDependencyManager {
                 let absolute_path = path.to_str().unwrap().to_string();
                 let filename = path.file_name().unwrap().to_str().unwrap().to_string();
 
-                let layer = determine_layer(&filename, &config.csharp.projects);
+                let layer = determine_layer(&filename, &config.csharp.projects, config.csharp.case_sensitive, &config.csharp.pattern);
                 let color = config.get_color(&layer).unwrap_or(&"gray".to_string()).to_string();
                 projects.push(Node {
                     id: absolute_path,

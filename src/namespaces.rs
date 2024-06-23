@@ -27,8 +27,8 @@ impl NamespaceDependencyManager {
         let using_regex = Regex::new(r"^using\s+([a-zA-Z0-9_.]+);?$").unwrap();
 
         for file in namespace_files {
-            let filename = file.file_name().unwrap().to_str().unwrap();
-            println!("Collecting nodes from file: {}", filename);
+            // let filename = file.file_name().unwrap().to_str().unwrap();
+            // println!("Collecting nodes from file: {}", filename);
             let mut file = File::open(&file)?;
             let mut contents = String::new();
             file.read_to_string(&mut contents)?;
@@ -37,7 +37,7 @@ impl NamespaceDependencyManager {
                 if let Some(captures) = namespace_regex.captures(line) {
                     let current_namespace = captures.get(1).unwrap().as_str().to_string();
                     if !namespaces.contains_key(&current_namespace) {
-                        let layer = determine_layer(&current_namespace, &config.csharp.namespaces);
+                        let layer = determine_layer(&current_namespace, &config.csharp.namespaces, config.csharp.case_sensitive, &config.csharp.pattern);
                         let color = config.get_color(&layer).unwrap_or(&"gray".to_string()).to_string();
                         namespaces.insert(current_namespace.clone(), Node {
                             id: current_namespace.clone(),
@@ -50,7 +50,7 @@ impl NamespaceDependencyManager {
                 } else if let Some(captures) = using_regex.captures(line) {
                     let namespace = captures.get(1).unwrap().as_str().to_string();
                     if !namespaces.contains_key(&namespace) {
-                        let layer = determine_layer(&namespace, &config.csharp.namespaces);
+                        let layer = determine_layer(&namespace, &config.csharp.namespaces, config.csharp.case_sensitive, &config.csharp.pattern);
                         let color = config.get_color(&layer).unwrap_or(&"gray".to_string()).to_string();
                         namespaces.insert(namespace.clone(), Node {
                             id: namespace.clone(),
@@ -98,8 +98,8 @@ impl NamespaceDependencyManager {
         let using_regex = Regex::new(r"^using\s+([a-zA-Z0-9_.]+);?$").unwrap();
 
         for file in namespace_files {
-            let filename = file.file_name().unwrap().to_str().unwrap();
-            println!("Collecting dependencies from file: {}", filename);
+            // let filename = file.file_name().unwrap().to_str().unwrap();
+            // println!("Collecting dependencies from file: {}", filename);
             let mut file = File::open(&file)?;
             let mut contents = String::new();
             file.read_to_string(&mut contents)?;
