@@ -7,6 +7,7 @@ mod projects;
 mod static_output;
 mod configuration;
 mod namespaces;
+mod stringsutils;
 
 use configuration::load_config;
 use namespaces::NamespaceDependencyManager;

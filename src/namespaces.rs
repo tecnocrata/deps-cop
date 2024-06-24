@@ -7,6 +7,7 @@ use regex::Regex;
 
 use crate::configuration::{determine_layer, should_exclude, Config};
 use crate::graph::{EdgeInfo, Node, NodeDependencies};
+use crate::stringsutils::RemoveBom;
 
 pub struct NamespaceDependencyManager;
 
@@ -26,8 +27,8 @@ impl NamespaceDependencyManager {
             }
         }
 
-        let namespace_regex = Regex::new(r"^namespace\s+([a-zA-Z0-9_.]+);?$").unwrap();
-        let using_regex = Regex::new(r"^using\s+([a-zA-Z0-9_.]+);?$").unwrap();
+        let namespace_regex = Regex::new(r"^namespace\s+([\p{L}\p{N}_\.]+);?$").unwrap();
+        let using_regex = Regex::new(r"^using\s+([\p{L}\p{N}_\.]+);?$").unwrap();
 
         for file in namespace_files {
             // let filename = file.file_name().unwrap().to_str().unwrap();
@@ -35,6 +36,9 @@ impl NamespaceDependencyManager {
             let mut file = File::open(&file)?;
             let mut contents = String::new();
             file.read_to_string(&mut contents)?;
+
+            // Remove BOM
+            contents = RemoveBom::remove_bom(&contents);
 
             for line in contents.lines() {
                 if let Some(captures) = namespace_regex.captures(line) {
@@ -100,8 +104,8 @@ impl NamespaceDependencyManager {
             .map(|(index, project)| (project.id.clone(), index))
             .collect();
 
-        let namespace_regex = Regex::new(r"^namespace\s+([a-zA-Z0-9_.]+);?$").unwrap();
-        let using_regex = Regex::new(r"^using\s+([a-zA-Z0-9_.]+);?$").unwrap();
+        let namespace_regex = Regex::new(r"^namespace\s+([\p{L}\p{N}_\.]+);?$").unwrap();
+        let using_regex = Regex::new(r"^using\s+([\p{L}\p{N}_\.]+);?$").unwrap();
 
         for file in namespace_files {
             // let filename = file.file_name().unwrap().to_str().unwrap();
@@ -110,6 +114,9 @@ impl NamespaceDependencyManager {
             let mut contents = String::new();
             file.read_to_string(&mut contents)?;
 
+            // Remove BOM 
+            contents = crate::stringsutils::RemoveBom::remove_bom(&contents);
+            
             let mut edges_info = Vec::new();
             let mut from_node_index: Option<usize> = None;
 
@@ -146,3 +153,4 @@ impl NamespaceDependencyManager {
         Ok(node_dependencies)
     }
 }
+
