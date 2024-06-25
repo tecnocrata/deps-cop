@@ -9,6 +9,7 @@ use walkdir::WalkDir;
 
 use crate::configuration::{determine_layer, should_exclude, Config};
 use crate::graph::{EdgeInfo, GraphDependencies, Node, NodeDependencies};
+use crate::stringsutils::RemoveBom;
 
 #[derive(Debug, Deserialize, PartialEq)]
 #[serde(rename_all = "PascalCase")]
@@ -55,6 +56,8 @@ impl GraphDependencies for ProjectDependencyManager {
                 let mut file = File::open(path)?;
                 let mut contents = String::new();
                 file.read_to_string(&mut contents)?;
+                // Remove BOM
+                contents = contents.remove_bom();
 
                 // Parse XML to check for ToolsVersion
                 let _project: Project = match serde_xml_rs::from_str(&contents) {
