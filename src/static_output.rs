@@ -264,13 +264,13 @@ fn generate_body_content_d3(file: &mut File) -> Result<(), Box<dyn std::error::E
 }
 
 /// Displays basic information about projects and their dependencies
-pub fn display_project_information(projects: &[Node], node_dependencies: &NodeDependencies) {
-    println!("Found projects:");
-    for (i, project) in projects.iter().enumerate() {
+pub fn display_graph_information(nodes: &[Node], node_dependencies: &NodeDependencies) {
+    println!("Found nodes:");
+    for (i, project) in nodes.iter().enumerate() {
         println!("{}: {:?}", i, project);
     }
 
-    println!("\nProject dependencies:");
+    println!("\nNode dependencies:");
     for (i, deps) in node_dependencies.iter().enumerate() {
         let dep_indices = deps.iter().map(|edge_info| edge_info.to.to_string()).collect::<Vec<_>>().join(", ");
         println!("Project {}: {}", i, dep_indices);

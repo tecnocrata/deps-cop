@@ -13,7 +13,7 @@ use configuration::load_config;
 use namespaces::NamespaceDependencyManager;
 use graph::{detect_cycles, GraphDependencies, Node, NodeDependencies};
 use projects::ProjectDependencyManager;
-use static_output::{generate_html_output, generate_mermaid_diagram, generate_graphviz_diagram, display_project_information};
+use static_output::{generate_html_output, generate_mermaid_diagram, generate_graphviz_diagram, display_graph_information};
 
 
 // Main entry point of the application
@@ -79,24 +79,26 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // println!("Configuration: {:#?}", config);
 
     let analysis = matches.value_of("analysis").unwrap();
+    let layers: Vec<Node> = get_layers(&config);
+    let layer_dependencies: NodeDependencies = get_layer_dependencies (&layers, &config.global.rules);
 
     match analysis {
         "csharp:projects" => {
             let nodes = ProjectDependencyManager::collect_nodes(&root_path, &config)?;
             let project_dependencies = ProjectDependencyManager::find_dependencies(&nodes, &config)?;
 
-            common_analysis_tasks(&matches, &nodes, &project_dependencies)?;
+            generate_output(&matches, &nodes, &project_dependencies, &layers, &layer_dependencies)?;
         }
         "csharp:namespaces" => {
             let nodes = NamespaceDependencyManager::collect_nodes(&root_path, &config)?;
             let namespace_dependencies = NamespaceDependencyManager::find_dependencies(&root_path, &nodes, &config)?;
 
-            common_analysis_tasks(&matches, &nodes, &namespace_dependencies)?;
+            generate_output(&matches, &nodes, &namespace_dependencies, &layers, &layer_dependencies)?;
         }
         // "javascript:folders" => {
         //     let folder_dependencies = JavaScriptDependencyManager::find_folder_dependencies(&root_path, &config)?;
 
-        //     common_analysis_tasks(&matches, &folder_dependencies.nodes, &folder_dependencies.dependencies)?;
+        //     generate_output(&matches, &folder_dependencies.nodes, &folder_dependencies.dependencies)?;
         // }
         _ => {
             eprintln!("Unsupported analysis type. Please specify 'csharp:projects', 'csharp:namespaces', or 'javascript:folders'.");
@@ -106,13 +108,49 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+fn get_layer_dependencies(layers: &[Node], rules: &configuration::Rules) -> Vec<Vec<graph::EdgeInfo>> {
+    // The rules param already contains the dependencies, one example is this: "io": ["core", "io", "usecase"],
+    // Where the 'io' layer depends on 'core', 'io' and 'usecase', so we can use this information to build the layer_dependencies
+    let mut layer_dependencies = Vec::new();
+    for layer in layers {
+        let mut edges_info = Vec::new();
+        for (index, layer_rule) in rules.rules.get(&layer.id).unwrap().iter().enumerate() {
+            let to_layer = layers.iter().find(|l| l.id == *layer_rule).unwrap();
+            let label = format!("{} -> {}", layer.name, to_layer.name);
+            edges_info.push(graph::EdgeInfo { to: index, allowed: true, label });
+        }
+        layer_dependencies.push(edges_info);
+    }
+    layer_dependencies
+}
 
-fn common_analysis_tasks(matches: &clap::ArgMatches, nodes: &[Node], dependencies: &NodeDependencies) -> Result<(), Box<dyn std::error::Error>> {
+fn get_layers(config: &configuration::Config) -> Vec<Node> {
+    let mut layers = Vec::new();
+    for layer in &config.global.layers {
+        layers.push(Node {
+            id: layer.clone(),
+            name: layer.clone(),
+            layer: "layer".to_string(),
+            node_type: "layer".to_string(),
+            color: match config.global.colors.colors.get(layer) {
+                Some(color) => color.clone(),
+                None => "gray".to_string(), // Or handle the None case as needed
+            },
+        });
+    }
+    layers
+}
+
+
+fn generate_output(matches: &clap::ArgMatches, nodes: &[Node], dependencies: &NodeDependencies, layers: &[Node], layer_dependencies: &NodeDependencies) -> Result<(), Box<dyn std::error::Error>> {
     // display the number of elements that nodes and dependencies have
     println!("Nodes: {}", nodes.len());
     println!("Dependencies: {}", dependencies.len());
+    println!("Layers: {}", layers.len());
+    println!("Layer Dependencies: {}", layer_dependencies.len());
     if matches.is_present("list") {
-        display_project_information(&nodes, &dependencies);
+        display_graph_information(&nodes, &dependencies);
+        display_graph_information(&layers, &layer_dependencies)
     }
 
     if let Some(format) = matches.value_of("output") {

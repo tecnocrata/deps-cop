@@ -125,7 +125,7 @@ impl GraphDependencies for ProjectDependencyManager {
                             let from_layer = &project.layer;
                             let to_layer = &nodes[index].layer;
                             static EMPTY_VEC: &Vec<String> = &Vec::new();
-                            let allowed_layers = match &config.global.allowed.get_layers(from_layer) {
+                            let allowed_layers = match &config.global.rules.get_layers(from_layer) {
                                 Some(layers) => layers,
                                 None => EMPTY_VEC,
                             };//.unwrap_or(&vec![]);

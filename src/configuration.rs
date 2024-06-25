@@ -5,34 +5,26 @@ use regex::Regex;
 use glob::Pattern;
 
 #[derive(Serialize, Deserialize, Debug, Default)]
-struct Colors {
-    core: String,
-    io: String,
-    usecase: String,
+pub struct Colors {
+    pub colors: HashMap<String, String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Default)]
-pub struct Allowed {
-    core: Vec<String>,
-    io: Vec<String>,
-    usecase: Vec<String>,
+pub struct Rules {
+    pub rules: HashMap<String, Vec<String>>,
 }
 
-impl Allowed {
+impl Rules {
     pub fn get_layers(&self, layer: &str) -> Option<&Vec<String>> {
-        match layer {
-            "core" => Some(&self.core),
-            "io" => Some(&self.io),
-            "usecase" => Some(&self.usecase),
-            _ => None,
-        }
+        self.rules.get(layer)
     }
 }
 
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct Global {
-    colors: Colors,
-    pub allowed: Allowed,
+    pub layers: Vec<String>,
+    pub colors: Colors,
+    pub rules: Rules,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -59,29 +51,27 @@ pub struct Config {
 
 impl Config {
     pub fn get_color(&self, layer: &str) -> Option<&String> {
-        match layer {
-            "core" => Some(&self.global.colors.core),
-            "io" => Some(&self.global.colors.io),
-            "usecase" => Some(&self.global.colors.usecase),
-            _ => None,
-        }
+        self.global.colors.colors.get(layer)
     }
 }
 
 impl Default for Config {
     fn default() -> Self {
+        let mut colors = HashMap::new();
+        colors.insert("core".to_string(), "#FBFDB8".to_string());
+        colors.insert("io".to_string(), "#A7D7FD".to_string());
+        colors.insert("usecase".to_string(), "#FEA29C".to_string());
+
+        let mut rules = HashMap::new();
+        rules.insert("core".to_string(), vec!["core".to_string()]);
+        rules.insert("io".to_string(), vec!["core".to_string(), "io".to_string(), "usecase".to_string()]);
+        rules.insert("usecase".to_string(), vec!["core".to_string(), "usecase".to_string()]);
+
         Self {
             global: Global {
-                colors: Colors {
-                    core: "#FBFDB8".to_string(),
-                    io: "#A7D7FD".to_string(),
-                    usecase: "#FEA29C".to_string(),
-                },
-                allowed: Allowed {
-                    core: vec!["core".to_string()],
-                    io: vec!["core".to_string(), "io".to_string(), "usecase".to_string()],
-                    usecase: vec!["core".to_string(), "usecase".to_string()],
-                },
+                layers: vec!["core".to_string(), "io".to_string(), "usecase".to_string()],
+                colors: Colors { colors },
+                rules: Rules { rules },
             },
             csharp: Csharp {
                 pattern: "regex".to_string(),
