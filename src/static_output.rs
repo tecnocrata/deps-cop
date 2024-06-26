@@ -103,7 +103,7 @@ fn generate_script_code_graphviz(file: &mut File, nodes: &[Node], node_dependenc
 
     // Subgraph for layers
     writeln!(file, "\tsubgraph cluster_key {{")?;
-    writeln!(file, "\t\tlabel=\"Layers\";")?;
+    writeln!(file, "\t\tlabel=\"Layer Rules\";")?;
     for (index, layer) in layers.iter().enumerate() {
         writeln!(file, "    L{} [label=\"{}\", style=filled, fillcolor=\"{}\"]", index + 1, layer.name, layer.color)?;
     }
@@ -322,7 +322,7 @@ pub fn generate_graphviz_diagram(nodes: &[Node], node_dependencies: &NodeDepende
 
     // Subgraph for layers
     println!("\tsubgraph cluster_key {{");
-    println!("\t\tlabel=\"Layers\";");
+    println!("\t\tlabel=\"Layer Rules\";");
     for (index, layer) in layers.iter().enumerate() {
         println!("    L{} [label=\"{}\", style=filled, fillcolor=\"{}\"]", index + 1, layer.name, layer.color);
     }
