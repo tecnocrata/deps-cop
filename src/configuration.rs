@@ -14,17 +14,17 @@ pub struct Rules {
     pub rules: HashMap<String, Vec<String>>,
 }
 
-impl Rules {
-    pub fn get_layers(&self, layer: &str) -> Option<&Vec<String>> {
-        self.rules.get(layer)
-    }
-}
+// impl Rules {
+//     pub fn get_layers(&self, layer: &str) -> Option<&Vec<String>> {
+//         self.rules.get(layer)
+//     }
+// }
 
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct Global {
     pub layers: Vec<String>,
-    pub colors: Colors,
-    pub rules: Rules,
+    pub colors: HashMap<String, String>,
+    pub rules: HashMap<String, Vec<String>>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -51,7 +51,7 @@ pub struct Config {
 
 impl Config {
     pub fn get_color(&self, layer: &str) -> Option<&String> {
-        self.global.colors.colors.get(layer)
+        self.global.colors.get(layer)
     }
 }
 
@@ -70,8 +70,8 @@ impl Default for Config {
         Self {
             global: Global {
                 layers: vec!["core".to_string(), "io".to_string(), "usecase".to_string()],
-                colors: Colors { colors },
-                rules: Rules { rules },
+                colors: colors ,
+                rules: rules,
             },
             csharp: Csharp {
                 pattern: "regex".to_string(),

@@ -29,7 +29,7 @@
             "name": "Project Analysis 'depscop'",
             "program": "${workspaceFolder}/target/debug/depscop",
             "args": [
-                "--folder", "/home/enrique/sites/csharp-architecture/",
+                "--folder", "/home/enrique/sites/ardalis/",
                 "--output", "graphviz",
                 "-l"
             ],

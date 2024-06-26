@@ -108,14 +108,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-fn get_layer_dependencies(layers: &[Node], rules: &configuration::Rules) -> Vec<Vec<graph::EdgeInfo>> {
+fn get_layer_dependencies(layers: &[Node], rules: &HashMap<String, Vec<String>>) -> Vec<Vec<graph::EdgeInfo>> {
     // Precompute layer indices for quick lookup
     let layer_indices: HashMap<&String, usize> = layers.iter().enumerate()
         .map(|(index, layer)| (&layer.id, index))
         .collect();
 
     layers.iter().map(|layer| {
-        rules.rules.get(&layer.id).unwrap_or(&Vec::new()).iter().map(|layer_rule| {
+        rules.get(&layer.id).unwrap_or(&Vec::new()).iter().map(|layer_rule| {
             let to_layer_index = *layer_indices.get(layer_rule).unwrap();
             let to_layer = &layers[to_layer_index];
             let label = format!("{} -> {}", layer.name, to_layer.name);
@@ -132,7 +132,7 @@ fn get_layers(config: &configuration::Config) -> Vec<Node> {
             name: layer.clone(),
             layer: "layer".to_string(),
             node_type: "layer".to_string(),
-            color: match config.global.colors.colors.get(layer) {
+            color: match config.global.colors.get(layer) {
                 Some(color) => color.clone(),
                 None => "gray".to_string(), // Or handle the None case as needed
             },

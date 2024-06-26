@@ -129,7 +129,7 @@ impl NamespaceDependencyManager {
 
                     if let Some(&index) = node_index_map.get(&child_namespace) {
                         let to_layer = &nodes[index].layer;
-                        let allowed_layers = config.global.rules.get_layers(to_layer).cloned().unwrap_or_else(Vec::new);
+                        let allowed_layers = config.global.rules.get(to_layer).cloned().unwrap_or_else(Vec::new);
                         let ok = allowed_layers.contains(to_layer);
                         let label = format!("to -> {}", nodes[index].name);
                         edges_info.push(EdgeInfo { to: index, allowed: ok, label });
@@ -141,7 +141,7 @@ impl NamespaceDependencyManager {
                 for edge in &mut edges_info {
                     let parent_layer = &nodes[parent_index].layer;
                     let to_layer = &nodes[edge.to].layer;
-                    let allowed_layers = config.global.rules.get_layers(parent_layer).cloned().unwrap_or_else(Vec::new);
+                    let allowed_layers = config.global.rules.get(parent_layer).cloned().unwrap_or_else(Vec::new);
                     edge.allowed = allowed_layers.contains(to_layer);
                 }
                 let current_edges = &node_dependencies[parent_index];

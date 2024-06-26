@@ -35,12 +35,6 @@ pub struct Project {
 
 pub struct ProjectDependencyManager;
 
-// pub trait ProjectDependencies {
-//     fn collect_csharp_projects(root_path: &Path, config: &Config) -> Result<Vec<Node>, Error>;
-//     fn find_dependencies(projects: &[Node], config: &Config) -> Result<NodeDependencies, Error>;
-//     // fn detect_cycles(nodes: &[Node], node_dependencies: &NodeDependencies);
-// }
-
 impl GraphDependencies for ProjectDependencyManager {
     /// Collects CsProject data from .csproj files found under the given root path
     fn collect_nodes(root_path: &Path, config: &Config) -> Result<Vec<Node>, Error> {
@@ -125,10 +119,7 @@ impl GraphDependencies for ProjectDependencyManager {
                             let from_layer = &project.layer;
                             let to_layer = &nodes[index].layer;
                             static EMPTY_VEC: &Vec<String> = &Vec::new();
-                            let allowed_layers = match &config.global.rules.get_layers(from_layer) {
-                                Some(layers) => layers,
-                                None => EMPTY_VEC,
-                            };//.unwrap_or(&vec![]);
+                            let allowed_layers = config.global.rules.get(from_layer).unwrap_or(&EMPTY_VEC);//.unwrap_or(&vec![]);
                             let ok = allowed_layers.contains(to_layer);
                             let label = format!("{} -> {}", project.name, nodes[index].name);
                             edges_info.push(EdgeInfo { to: index, allowed: ok, label });

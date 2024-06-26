@@ -97,7 +97,11 @@ fn generate_script_code_graphviz(file: &mut File, nodes: &[Node], node_dependenc
     }
     for (index, deps) in node_dependencies.iter().enumerate() {
         for dep in deps {
-            writeln!(file, "    P{} -> P{}", index + 1, dep.to + 1)?;
+            if dep.allowed {
+                writeln!(file, "    P{} -> P{}", index + 1, dep.to + 1)?;
+            } else {
+                writeln!(file, "    P{} -> P{} [color=\"red\" style=dotted penwidth=2]", index + 1, dep.to + 1)?;
+            }
         }
     }
 
@@ -316,7 +320,11 @@ pub fn generate_graphviz_diagram(nodes: &[Node], node_dependencies: &NodeDepende
     }
     for (index, deps) in node_dependencies.iter().enumerate() {
         for dep in deps {
-            println!("    P{} -> P{}", index + 1, dep.to + 1);
+            if dep.allowed {
+                println!("    P{} -> P{}", index + 1, dep.to + 1);
+            } else {
+                println!("    P{} -> P{} [color=\"red\" style=dashed penwidth=2]", index + 1, dep.to + 1);
+            }
         }
     }
 
