@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::{collections::HashMap, path::PathBuf};
 use std::env;
 use clap::{App, Arg, AppSettings};
 
@@ -109,21 +109,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn get_layer_dependencies(layers: &[Node], rules: &configuration::Rules) -> Vec<Vec<graph::EdgeInfo>> {
-    // The rules param already contains the dependencies, one example is this: "io": ["core", "io", "usecase"],
-    // Where the 'io' layer depends on 'core', 'io' and 'usecase', so we can use this information to build the layer_dependencies
-    let mut layer_dependencies = Vec::new();
-    for layer in layers {
-        let mut edges_info = Vec::new();
-        for (index, layer_rule) in rules.rules.get(&layer.id).unwrap().iter().enumerate() {
-            let to_layer = layers.iter().find(|l| l.id == *layer_rule).unwrap();
+    // Precompute layer indices for quick lookup
+    let layer_indices: HashMap<&String, usize> = layers.iter().enumerate()
+        .map(|(index, layer)| (&layer.id, index))
+        .collect();
+
+    layers.iter().map(|layer| {
+        rules.rules.get(&layer.id).unwrap_or(&Vec::new()).iter().map(|layer_rule| {
+            let to_layer_index = *layer_indices.get(layer_rule).unwrap();
+            let to_layer = &layers[to_layer_index];
             let label = format!("{} -> {}", layer.name, to_layer.name);
-            // get the index of to_layer.id inside the layers vector...
-            let to_layer_index = layers.iter().position(|l| l.id == to_layer.id).unwrap();
-            edges_info.push(graph::EdgeInfo { to: to_layer_index, allowed: true, label });
-        }
-        layer_dependencies.push(edges_info);
-    }
-    layer_dependencies
+            graph::EdgeInfo { to: to_layer_index, allowed: true, label }
+        }).collect()
+    }).collect()
 }
 
 fn get_layers(config: &configuration::Config) -> Vec<Node> {
