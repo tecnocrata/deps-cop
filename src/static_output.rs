@@ -4,7 +4,7 @@ use chrono::Local;
 
 use crate::graph::{Node, NodeDependencies};
 
-pub fn generate_html_output(nodes: &[Node], node_dependencies: &NodeDependencies, path: &str, format: &str) -> Result<(), Box<dyn std::error::Error>> {
+pub fn generate_html_output(nodes: &[Node], node_dependencies: &NodeDependencies, layers: &[Node], layer_dependencies: &NodeDependencies, path: &str, format: &str) -> Result<(), Box<dyn std::error::Error>> {
     println!("Generating HTML output at '{}' using format '{}'", path, format);
 
     let mut file = File::create(path)?;
@@ -40,7 +40,7 @@ pub fn generate_html_output(nodes: &[Node], node_dependencies: &NodeDependencies
     writeln!(file, "        <p>Everything was generated using Rust.</p>")?;
     writeln!(file, "        <img src=\"https://www.rust-lang.org/logos/rust-logo-blk.svg\" alt=\"Rust Logo\" class=\"rust-logo mx-auto\">")?;
     writeln!(file, "    </div>")?;
-    generate_script_code(&mut file, format, nodes, node_dependencies)?;
+    generate_script_code(&mut file, format, nodes, node_dependencies, layers, layer_dependencies)?;
     writeln!(file, "</body>")?;
     writeln!(file, "</html>")?;
     
@@ -76,16 +76,16 @@ fn generate_style_content_d3(file: &mut File) -> Result<(), Box<dyn std::error::
     Ok(())
 }
 
-fn generate_script_code(file: &mut File, format: &str, nodes: &[Node], node_dependencies: &NodeDependencies) -> Result<(), Box<dyn std::error::Error>> {
+fn generate_script_code(file: &mut File, format: &str, nodes: &[Node], node_dependencies: &NodeDependencies, layers: &[Node], layer_dependencies: &NodeDependencies) -> Result<(), Box<dyn std::error::Error>> {
     match format {
-        "graphviz" => generate_script_code_graphviz(file, nodes, node_dependencies)?,
+        "graphviz" => generate_script_code_graphviz(file, nodes, node_dependencies, layers, layer_dependencies)?,
         "d3" => generate_script_code_d3(file, nodes, node_dependencies)?,
         _ => (),
     }
     Ok(())
 }
 
-fn generate_script_code_graphviz(file: &mut File, nodes: &[Node], node_dependencies: &NodeDependencies) -> Result<(), Box<dyn std::error::Error>> {
+fn generate_script_code_graphviz(file: &mut File, nodes: &[Node], node_dependencies: &NodeDependencies, layers: &[Node], layer_dependencies: &NodeDependencies) -> Result<(), Box<dyn std::error::Error>> {
     writeln!(file, "<script>")?;
     writeln!(file, "    var viz = new Viz();")?;
     writeln!(file, "    var graphvizData = `")?;
@@ -100,6 +100,20 @@ fn generate_script_code_graphviz(file: &mut File, nodes: &[Node], node_dependenc
             writeln!(file, "    P{} -> P{}", index + 1, dep.to + 1)?;
         }
     }
+
+    // Subgraph for layers
+    writeln!(file, "\tsubgraph cluster_key {{")?;
+    writeln!(file, "\t\tlabel=\"Layers\";")?;
+    for (index, layer) in layers.iter().enumerate() {
+        writeln!(file, "    L{} [label=\"{}\", style=filled, fillcolor=\"{}\"]", index + 1, layer.name, layer.color)?;
+    }
+    for (index, deps) in layer_dependencies.iter().enumerate() {
+        for dep in deps {
+            writeln!(file, "    L{} -> L{}", index + 1, dep.to + 1)?;
+        }
+    }
+    writeln!(file, "\t}}")?;
+
     writeln!(file, "}}`;")?;
     writeln!(file, "    viz.renderSVGElement(graphvizData)")?;
     writeln!(file, "            .then(function(element) {{")?;
@@ -293,7 +307,7 @@ pub fn generate_mermaid_diagram(nodes: &[Node], node_dependencies: &NodeDependen
 }
 
 /// Generates a Graphviz diagram based on project dependencies
-pub fn generate_graphviz_diagram(nodes: &[Node], node_dependencies: &NodeDependencies) {
+pub fn generate_graphviz_diagram(nodes: &[Node], node_dependencies: &NodeDependencies, layers: &[Node], layer_dependencies: &NodeDependencies) {
     println!("digraph G {{");
     println!("    node [color=grey, style=filled];");
     println!("    node [fontname=\"Verdana\", size=\"30,30\"];");
@@ -305,5 +319,19 @@ pub fn generate_graphviz_diagram(nodes: &[Node], node_dependencies: &NodeDepende
             println!("    P{} -> P{}", index + 1, dep.to + 1);
         }
     }
+
+    // Subgraph for layers
+    println!("\tsubgraph cluster_key {{");
+    println!("\t\tlabel=\"Layers\";");
+    for (index, layer) in layers.iter().enumerate() {
+        println!("    L{} [label=\"{}\", style=filled, fillcolor=\"{}\"]", index + 1, layer.name, layer.color);
+    }
+    for (index, deps) in layer_dependencies.iter().enumerate() {
+        for dep in deps {
+            println!("    L{} -> L{}", index + 1, dep.to + 1);
+        }
+    }
+    println!("\t}}");
+
     println!("}}");
 }

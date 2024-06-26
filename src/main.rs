@@ -117,7 +117,9 @@ fn get_layer_dependencies(layers: &[Node], rules: &configuration::Rules) -> Vec<
         for (index, layer_rule) in rules.rules.get(&layer.id).unwrap().iter().enumerate() {
             let to_layer = layers.iter().find(|l| l.id == *layer_rule).unwrap();
             let label = format!("{} -> {}", layer.name, to_layer.name);
-            edges_info.push(graph::EdgeInfo { to: index, allowed: true, label });
+            // get the index of to_layer.id inside the layers vector...
+            let to_layer_index = layers.iter().position(|l| l.id == to_layer.id).unwrap();
+            edges_info.push(graph::EdgeInfo { to: to_layer_index, allowed: true, label });
         }
         layer_dependencies.push(edges_info);
     }
@@ -155,11 +157,11 @@ fn generate_output(matches: &clap::ArgMatches, nodes: &[Node], dependencies: &No
 
     if let Some(format) = matches.value_of("output") {
         if let Some(html_path) = matches.value_of("output-html") {
-            generate_html_output(&nodes, &dependencies, html_path, format)?;
+            generate_html_output(&nodes, &dependencies, &layers, &layer_dependencies, html_path, format)?;
         } else {
             match format {
                 "mermaid" => generate_mermaid_diagram(&nodes, &dependencies),
-                "graphviz" => generate_graphviz_diagram(&nodes, &dependencies),
+                "graphviz" => generate_graphviz_diagram(&nodes, &dependencies, &layers, &layer_dependencies),
                 "d3" => eprintln!("D3 output is only available for HTML output."),
                 _ => eprintln!("Invalid format. Use 'mermaid' or 'graphviz'."),
             }
