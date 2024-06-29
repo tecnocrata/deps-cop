@@ -19,7 +19,7 @@ use static_output::{generate_html_output, generate_mermaid_diagram, generate_gra
 // Main entry point of the application
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let matches = App::new("Dependency Analyzer Cop")
-        .version("0.1.45")
+        .version("0.1.46")
         .mut_arg("version", |a| a.short('v'))  // It shows the version with -v
         .author("tecnocrata <")
         .about("Analyzes dependencies from project files")
