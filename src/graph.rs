@@ -29,20 +29,22 @@ pub trait GraphDependencies {
     // fn detect_cycles(nodes: &[Node], node_dependencies: &NodeDependencies);
 }
 
-pub fn detect_cycles(nodes: &[Node], node_dependencies: &NodeDependencies) {
+pub fn detect_cycles(nodes: &[Node], node_dependencies: &NodeDependencies) -> bool{
     let mut has_cycle = false;
     for i in 0..nodes.len() {
         let mut visiting = HashSet::new();
         let mut visited = HashSet::new();
         let mut stack = Vec::new();
         if dfs(i, &mut stack, &mut visiting, &mut visited, node_dependencies, nodes) {
-            println!("Cycle initiated from node: {}", nodes[i].name);
+            // println!("Cycle initiated from node: {}", nodes[i].name);
+            println!("===============================");
             has_cycle = true;
         }
     }
     if !has_cycle {
         println!("No circular dependencies detected.");
     }
+    has_cycle
 }
 
 /// Helper function to perform Depth-First Search (DFS) to detect cycles

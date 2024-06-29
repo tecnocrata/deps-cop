@@ -82,18 +82,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let layers: Vec<Node> = get_layers(&config);
     let layer_dependencies: NodeDependencies = get_layer_dependencies (&layers, &config.global.rules);
 
-    match analysis {
+    let result = match analysis {
         "csharp:projects" => {
             let nodes = ProjectDependencyManager::collect_nodes(&root_path, &config)?;
             let project_dependencies = ProjectDependencyManager::find_dependencies(&nodes, &config)?;
 
-            generate_output(&matches, &nodes, &project_dependencies, &layers, &layer_dependencies)?;
+            generate_output(&matches, &nodes, &project_dependencies, &layers, &layer_dependencies)
         }
         "csharp:namespaces" => {
             let nodes = NamespaceDependencyManager::collect_nodes(&root_path, &config)?;
             let namespace_dependencies = NamespaceDependencyManager::find_dependencies(&root_path, &nodes, &config)?;
 
-            generate_output(&matches, &nodes, &namespace_dependencies, &layers, &layer_dependencies)?;
+            generate_output(&matches, &nodes, &namespace_dependencies, &layers, &layer_dependencies)
         }
         // "javascript:folders" => {
         //     let folder_dependencies = JavaScriptDependencyManager::find_folder_dependencies(&root_path, &config)?;
@@ -102,10 +102,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         // }
         _ => {
             eprintln!("Unsupported analysis type. Please specify 'csharp:projects', 'csharp:namespaces', or 'javascript:folders'.");
+            Err(Box::from("Unsupported analysis type"))
+        }
+    };
+
+    match result {
+        Ok(_) => Ok(()),
+        Err(e) => {
+            eprintln!("Error: {}", e);
+            std::process::exit(1);
         }
     }
-
-    Ok(())
 }
 
 fn get_layer_dependencies(layers: &[Node], rules: &HashMap<String, Vec<String>>) -> Vec<Vec<graph::EdgeInfo>> {
@@ -141,7 +148,6 @@ fn get_layers(config: &configuration::Config) -> Vec<Node> {
     layers
 }
 
-
 fn generate_output(matches: &clap::ArgMatches, nodes: &[Node], dependencies: &NodeDependencies, layers: &[Node], layer_dependencies: &NodeDependencies) -> Result<(), Box<dyn std::error::Error>> {
     // display the number of elements that nodes and dependencies have
     println!("Nodes: {}", nodes.len());
@@ -167,7 +173,11 @@ fn generate_output(matches: &clap::ArgMatches, nodes: &[Node], dependencies: &No
     }
 
     if matches.is_present("detect-cycles") {
-        detect_cycles(&nodes, &dependencies);
+        let has_cycle = detect_cycles(&nodes, &dependencies);
+        if has_cycle {
+            eprintln!("Cycle detected in dependencies.");
+            std::process::exit(1);
+        }
     }
 
     Ok(())
