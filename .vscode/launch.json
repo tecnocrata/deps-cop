@@ -4,11 +4,33 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug executable 'depscop'",
+            "name": "Namespaces Analysis 'depscop'",
             "program": "${workspaceFolder}/target/debug/depscop",
             "args": [
                 "--folder", "/home/enrique/sites/csharp-architecture/",
                 "--analysis", "csharp:namespaces",
+                "-l"
+            ],
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": {
+                "type": "cargo",
+                "command": "build",
+                "args": [
+                    "--bin=depscop",
+                    "--package=depscop"
+                ],
+                "problemMatcher": ["$rustc"]
+            },
+            "sourceLanguages": ["rust"]
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Project Analysis 'depscop'",
+            "program": "${workspaceFolder}/target/debug/depscop",
+            "args": [
+                "--folder", "/home/enrique/sites/ardalis/",
+                "--output", "graphviz",
                 "-l"
             ],
             "cwd": "${workspaceFolder}",

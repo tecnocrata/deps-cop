@@ -13,11 +13,12 @@
     },
     "csharp": {
         "pattern": "wildcard",
-        "caseSensitive": "false",
-        "projects":{
-                "core": "*Entities*.csproj$",
-                "io": ["*IO*.csproj$","Csd.Api.csproj"],
-                "usecase": "*UseCase*.csproj$"
+        "case_sensitive": false,
+        "exclude_folders": ["bin", "obj"],
+        "projects": {
+            "core": "*Entities*.csproj$",
+            "io": ["*IO*.csproj$", "Csd.Api.csproj"],
+            "usecase": "*UseCases*.csproj$"
         },
         "namespaces": {
             "core": "*Entities*",
@@ -25,13 +26,14 @@
             "usecase": "*UseCase*"
         }
     },
-    "javascript":{
-        "pattern":"wildcard",
-        "caseSensitive":"false",
-        "folders":{
-            "core":"*Entities*",
-            "io":"*IO*",
-            "usecase":"*UseCase*"
+    "javascript": {
+        "pattern": "wildcard",
+        "case_sensitive": false,
+        "exclude_folders": ["node_modules"],
+        "folders": {
+            "core": "*Entities*",
+            "io": "*IO*",
+            "usecase": "*UseCase*"
         }
     }
 }

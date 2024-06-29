@@ -1,11 +1,12 @@
 {
     "global": {
+        "layers": ["core", "io", "usecase"],
         "colors": {
             "core": "#FBFDB8",
             "io": "#A7D7FD",
             "usecase": "#FEA29C"
         },
-        "allowed": {
+        "rules": {
             "io": ["core", "io", "usecase"],
             "usecase": ["core", "usecase"],
             "core": ["core"]
@@ -13,21 +14,17 @@
     },
     "csharp": {
         "pattern": "regex",
-        "caseSensitive": "true",
-        "projects":{
-                "core": ".*\\.Entities.*\\.csproj$",
-                "io": ".*\\.IO.*\\.csproj$",
-                "usecase": ".*\\.UseCase.*\\.csproj$"
-        },
-        "projectExclude": {
-            "core": [],
-            "io": [],
-            "usecase": []
+        "case_sensitive": true,
+        "exclude_folders": ["bin", "obj"],
+        "projects": {
+            "core": ".*\\.Entities.*\\.csproj$",
+            "io": ".*\\.IO.*\\.csproj$",
+            "usecase": ".*\\.UseCases.*\\.csproj$"
         },
         "namespaces": {
-            "core": ".*\\.Entities\\..*",
-            "io": ".*\\.IO\\..*",
-            "usecase": ".*\\.UseCase\\..*"
+            "core": ".*\\.Entities(\\..*)?$",
+            "io": ".*\\.IO(\\..*)?$",
+            "usecase": ".*\\.UseCases(\\..*)?$"
         }
     }
 }

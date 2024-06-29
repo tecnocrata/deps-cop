@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::{collections::HashMap, path::PathBuf};
 use std::env;
 use clap::{App, Arg, AppSettings};
 
@@ -7,12 +7,13 @@ mod projects;
 mod static_output;
 mod configuration;
 mod namespaces;
+mod stringsutils;
 
 use configuration::load_config;
 use namespaces::NamespaceDependencyManager;
 use graph::{detect_cycles, GraphDependencies, Node, NodeDependencies};
 use projects::ProjectDependencyManager;
-use static_output::{generate_html_output, generate_mermaid_diagram, generate_graphviz_diagram, display_project_information};
+use static_output::{generate_html_output, generate_mermaid_diagram, generate_graphviz_diagram, display_graph_information};
 
 
 // Main entry point of the application
@@ -78,49 +79,93 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // println!("Configuration: {:#?}", config);
 
     let analysis = matches.value_of("analysis").unwrap();
+    let layers: Vec<Node> = get_layers(&config);
+    let layer_dependencies: NodeDependencies = get_layer_dependencies (&layers, &config.global.rules);
 
-    match analysis {
+    let result = match analysis {
         "csharp:projects" => {
             let nodes = ProjectDependencyManager::collect_nodes(&root_path, &config)?;
             let project_dependencies = ProjectDependencyManager::find_dependencies(&nodes, &config)?;
 
-            common_analysis_tasks(&matches, &nodes, &project_dependencies)?;
+            generate_output(&matches, &nodes, &project_dependencies, &layers, &layer_dependencies)
         }
         "csharp:namespaces" => {
             let nodes = NamespaceDependencyManager::collect_nodes(&root_path, &config)?;
             let namespace_dependencies = NamespaceDependencyManager::find_dependencies(&root_path, &nodes, &config)?;
 
-            common_analysis_tasks(&matches, &nodes, &namespace_dependencies)?;
+            generate_output(&matches, &nodes, &namespace_dependencies, &layers, &layer_dependencies)
         }
         // "javascript:folders" => {
         //     let folder_dependencies = JavaScriptDependencyManager::find_folder_dependencies(&root_path, &config)?;
 
-        //     common_analysis_tasks(&matches, &folder_dependencies.nodes, &folder_dependencies.dependencies)?;
+        //     generate_output(&matches, &folder_dependencies.nodes, &folder_dependencies.dependencies)?;
         // }
         _ => {
             eprintln!("Unsupported analysis type. Please specify 'csharp:projects', 'csharp:namespaces', or 'javascript:folders'.");
+            Err(Box::from("Unsupported analysis type"))
+        }
+    };
+
+    match result {
+        Ok(_) => Ok(()),
+        Err(e) => {
+            eprintln!("Error: {}", e);
+            std::process::exit(1);
         }
     }
-
-    Ok(())
 }
 
+fn get_layer_dependencies(layers: &[Node], rules: &HashMap<String, Vec<String>>) -> Vec<Vec<graph::EdgeInfo>> {
+    // Precompute layer indices for quick lookup
+    let layer_indices: HashMap<&String, usize> = layers.iter().enumerate()
+        .map(|(index, layer)| (&layer.id, index))
+        .collect();
 
-fn common_analysis_tasks(matches: &clap::ArgMatches, nodes: &[Node], dependencies: &NodeDependencies) -> Result<(), Box<dyn std::error::Error>> {
+    layers.iter().map(|layer| {
+        rules.get(&layer.id).unwrap_or(&Vec::new()).iter().map(|layer_rule| {
+            let to_layer_index = *layer_indices.get(layer_rule).unwrap();
+            let to_layer = &layers[to_layer_index];
+            let label = format!("{} -> {}", layer.name, to_layer.name);
+            graph::EdgeInfo { to: to_layer_index, allowed: true, label }
+        }).collect()
+    }).collect()
+}
+
+fn get_layers(config: &configuration::Config) -> Vec<Node> {
+    let mut layers = Vec::new();
+    for layer in &config.global.layers {
+        layers.push(Node {
+            id: layer.clone(),
+            name: layer.clone(),
+            layer: "layer".to_string(),
+            node_type: "layer".to_string(),
+            color: match config.global.colors.get(layer) {
+                Some(color) => color.clone(),
+                None => "gray".to_string(), // Or handle the None case as needed
+            },
+        });
+    }
+    layers
+}
+
+fn generate_output(matches: &clap::ArgMatches, nodes: &[Node], dependencies: &NodeDependencies, layers: &[Node], layer_dependencies: &NodeDependencies) -> Result<(), Box<dyn std::error::Error>> {
     // display the number of elements that nodes and dependencies have
     println!("Nodes: {}", nodes.len());
     println!("Dependencies: {}", dependencies.len());
+    println!("Layers: {}", layers.len());
+    println!("Layer Dependencies: {}", layer_dependencies.len());
     if matches.is_present("list") {
-        display_project_information(&nodes, &dependencies);
+        display_graph_information(&nodes, &dependencies);
+        display_graph_information(&layers, &layer_dependencies)
     }
 
     if let Some(format) = matches.value_of("output") {
         if let Some(html_path) = matches.value_of("output-html") {
-            generate_html_output(&nodes, &dependencies, html_path, format)?;
+            generate_html_output(&nodes, &dependencies, &layers, &layer_dependencies, html_path, format)?;
         } else {
             match format {
                 "mermaid" => generate_mermaid_diagram(&nodes, &dependencies),
-                "graphviz" => generate_graphviz_diagram(&nodes, &dependencies),
+                "graphviz" => generate_graphviz_diagram(&nodes, &dependencies, &layers, &layer_dependencies),
                 "d3" => eprintln!("D3 output is only available for HTML output."),
                 _ => eprintln!("Invalid format. Use 'mermaid' or 'graphviz'."),
             }
@@ -128,7 +173,11 @@ fn common_analysis_tasks(matches: &clap::ArgMatches, nodes: &[Node], dependencie
     }
 
     if matches.is_present("detect-cycles") {
-        detect_cycles(&nodes, &dependencies);
+        let has_cycle = detect_cycles(&nodes, &dependencies);
+        if has_cycle {
+            eprintln!("Cycle detected in dependencies.");
+            std::process::exit(1);
+        }
     }
 
     Ok(())

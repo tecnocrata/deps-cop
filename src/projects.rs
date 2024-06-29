@@ -7,8 +7,9 @@ use serde::Deserialize;
 // use regex::Regex;
 use walkdir::WalkDir;
 
-use crate::configuration::{determine_layer, Config};
+use crate::configuration::{determine_layer, should_exclude, Config};
 use crate::graph::{EdgeInfo, GraphDependencies, Node, NodeDependencies};
+use crate::stringsutils::RemoveBom;
 
 #[derive(Debug, Deserialize, PartialEq)]
 #[serde(rename_all = "PascalCase")]
@@ -34,12 +35,6 @@ pub struct Project {
 
 pub struct ProjectDependencyManager;
 
-// pub trait ProjectDependencies {
-//     fn collect_csharp_projects(root_path: &Path, config: &Config) -> Result<Vec<Node>, Error>;
-//     fn find_dependencies(projects: &[Node], config: &Config) -> Result<NodeDependencies, Error>;
-//     // fn detect_cycles(nodes: &[Node], node_dependencies: &NodeDependencies);
-// }
-
 impl GraphDependencies for ProjectDependencyManager {
     /// Collects CsProject data from .csproj files found under the given root path
     fn collect_nodes(root_path: &Path, config: &Config) -> Result<Vec<Node>, Error> {
@@ -48,10 +43,15 @@ impl GraphDependencies for ProjectDependencyManager {
         for entry in WalkDir::new(root_path) {
             let entry = entry?;
             let path = entry.path();
+            if should_exclude(&path.to_path_buf(), &config.csharp.exclude_folders) {
+                continue;
+            }
             if path.extension().map_or(false, |e| e == "csproj") {
                 let mut file = File::open(path)?;
                 let mut contents = String::new();
                 file.read_to_string(&mut contents)?;
+                // Remove BOM
+                contents = contents.remove_bom();
 
                 // Parse XML to check for ToolsVersion
                 let _project: Project = match serde_xml_rs::from_str(&contents) {
@@ -65,7 +65,7 @@ impl GraphDependencies for ProjectDependencyManager {
                 let absolute_path = path.to_str().unwrap().to_string();
                 let filename = path.file_name().unwrap().to_str().unwrap().to_string();
 
-                let layer = determine_layer(&filename, &config.csharp.projects);
+                let layer = determine_layer(&filename, &config.csharp.projects, config.csharp.case_sensitive, &config.csharp.pattern);
                 let color = config.get_color(&layer).unwrap_or(&"gray".to_string()).to_string();
                 projects.push(Node {
                     id: absolute_path,
@@ -119,10 +119,7 @@ impl GraphDependencies for ProjectDependencyManager {
                             let from_layer = &project.layer;
                             let to_layer = &nodes[index].layer;
                             static EMPTY_VEC: &Vec<String> = &Vec::new();
-                            let allowed_layers = match &config.global.allowed.get_layers(from_layer) {
-                                Some(layers) => layers,
-                                None => EMPTY_VEC,
-                            };//.unwrap_or(&vec![]);
+                            let allowed_layers = config.global.rules.get(from_layer).unwrap_or(&EMPTY_VEC);//.unwrap_or(&vec![]);
                             let ok = allowed_layers.contains(to_layer);
                             let label = format!("{} -> {}", project.name, nodes[index].name);
                             edges_info.push(EdgeInfo { to: index, allowed: ok, label });
