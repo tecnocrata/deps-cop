@@ -41,7 +41,8 @@ impl GraphDependencies for ProjectDependencyManager {
         for entry in WalkDir::new(root_path) {
             let entry = entry?;
             let path = entry.path();
-            if exclude_files_and_folders(&path.to_path_buf(), &config.csharp.as_ref().unwrap().exclude) {
+            let csharp_config = config.csharp.as_ref().unwrap();
+            if exclude_files_and_folders(&path.to_path_buf(), &csharp_config.exclude, &csharp_config.pattern, csharp_config.case_sensitive) {
                 continue;
             }
             if path.extension().map_or(false, |e| e == "csproj") {
@@ -72,11 +73,10 @@ impl GraphDependencies for ProjectDependencyManager {
                     None => continue,
                 };
 
-                if exclude_projects(&filename, &config.csharp.as_ref().unwrap().exclude) {
+                if exclude_projects(&filename, &csharp_config.exclude, &csharp_config.pattern, csharp_config.case_sensitive) {
                     continue;
                 }
 
-                let csharp_config = config.csharp.as_ref().unwrap();
                 let layer = determine_layer(&filename, &csharp_config.projects, csharp_config.case_sensitive, &csharp_config.pattern);
                 let color = config.get_color(&layer).cloned().unwrap_or_else(|| "gray".to_string());
 
