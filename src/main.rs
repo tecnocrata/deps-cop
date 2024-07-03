@@ -1,4 +1,4 @@
-use std::{collections::HashMap, path::PathBuf};
+use std::{collections::HashMap, fs::File, path::PathBuf};
 use std::env;
 use clap::{App, Arg, AppSettings};
 
@@ -9,12 +9,11 @@ mod configuration;
 mod namespaces;
 mod stringsutils;
 
-use configuration::load_config;
+use configuration::{load_config, Config};
 use namespaces::NamespaceDependencyManager;
 use graph::{detect_cycles, GraphDependencies, Node, NodeDependencies};
 use projects::ProjectDependencyManager;
 use static_output::{generate_html_output, generate_mermaid_diagram, generate_graphviz_diagram, display_graph_information};
-
 
 // Main entry point of the application
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -29,7 +28,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
              .short('f')
              .value_name("PATH")
              .help("Sets a custom folder path")
-             .takes_value(true))
+             .takes_value(true)
+             .required_unless_present("generate-config"))
         .arg(Arg::new("list")
              .long("list")
              .short('l')
@@ -58,6 +58,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
              .takes_value(true)
              .default_value("csharp:projects")
              .requires("folder"))
+        .arg(Arg::new("generate-config")
+             .long("generate-config")
+             .short('g')
+             .value_name("LANGUAGES")
+             .help("Generates the default configuration file for the specified languages (comma-separated, e.g., 'csharp,javascript')")
+             .takes_value(true)
+             .requires("folder"))
         .get_matches();
 
     // Get the current directory
@@ -74,6 +81,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         // Canonicalize the path to resolve any '.' or '..'
         complete_path.canonicalize()
     })?;
+
+    if let Some(languages) = matches.value_of("generate-config") {
+        generate_default_config(&root_path, languages)?;
+        println!("Configuration file generated at: {:?}", root_path.join("depscoprc.json"));
+        return Ok(());
+    }
 
     let config = load_config(&root_path);
     // println!("Configuration: {:#?}", config);
@@ -180,5 +193,23 @@ fn generate_output(matches: &clap::ArgMatches, nodes: &[Node], dependencies: &No
         }
     }
 
+    Ok(())
+}
+
+fn generate_default_config(folder: &PathBuf, languages: &str) -> Result<(), Box<dyn std::error::Error>> {
+    let mut config = Config::default();
+    let langs: Vec<&str> = languages.split(',').collect();
+
+    // Filter config based on the provided languages
+    if !langs.contains(&"csharp") {
+        config.csharp = None;
+    }
+    if !langs.contains(&"javascript") {
+        config.javascript = None;
+    }
+
+    let config_path = folder.join("depscoprc.json");
+    let file = File::create(config_path)?;
+    serde_json::to_writer_pretty(file, &config)?;
     Ok(())
 }
