@@ -14,7 +14,11 @@
     "csharp": {
         "pattern": "wildcard",
         "case_sensitive": false,
-        "exclude_folders": ["bin", "obj"],
+        "exclude": {
+            "folders": ["bin","obj"],
+            "projects": [],
+            "namespaces": []
+        },
         "projects": {
             "core": "*Entities*.csproj$",
             "io": ["*IO*.csproj$", "Csd.Api.csproj"],
@@ -30,6 +34,10 @@
         "pattern": "wildcard",
         "case_sensitive": false,
         "exclude_folders": ["node_modules"],
+        "exclude": {
+            "folders": ["node_modules"],
+            "files": []
+        },
         "folders": {
             "core": "*Entities*",
             "io": "*IO*",

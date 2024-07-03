@@ -14,17 +14,19 @@ pub struct Rules {
     pub rules: HashMap<String, Vec<String>>,
 }
 
-// impl Rules {
-//     pub fn get_layers(&self, layer: &str) -> Option<&Vec<String>> {
-//         self.rules.get(layer)
-//     }
-// }
-
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct Global {
     pub layers: Vec<String>,
     pub colors: HashMap<String, String>,
     pub rules: HashMap<String, Vec<String>>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Default)]
+pub struct Exclude {
+    pub folders: Vec<String>,
+    pub projects: Vec<String>,
+    pub namespaces: Vec<String>,
+    pub files: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -38,15 +40,24 @@ pub enum StringOrVec {
 pub struct Csharp {
     pub pattern: String,
     pub case_sensitive: bool,
-    pub exclude_folders: Vec<String>,
+    pub exclude: Exclude,
     pub projects: HashMap<String, StringOrVec>,
     pub namespaces: HashMap<String, StringOrVec>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Default)]
+pub struct Javascript {
+    pub pattern: String,
+    pub case_sensitive: bool,
+    pub exclude: Exclude,
+    pub folders: HashMap<String, StringOrVec>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Config {
     pub global: Global,
-    pub csharp: Csharp,
+    pub csharp: Option<Csharp>,
+    pub javascript: Option<Javascript>,
 }
 
 impl Config {
@@ -70,13 +81,18 @@ impl Default for Config {
         Self {
             global: Global {
                 layers: vec!["core".to_string(), "io".to_string(), "usecase".to_string()],
-                colors: colors ,
+                colors: colors,
                 rules: rules,
             },
-            csharp: Csharp {
+            csharp: Some(Csharp {
                 pattern: "regex".to_string(),
                 case_sensitive: true,
-                exclude_folders: vec!["bin".to_string(), "obj".to_string()],
+                exclude: Exclude {
+                    folders: vec!["bin".to_string(), "obj".to_string()],
+                    projects: vec![],
+                    namespaces: vec![],
+                    files: vec![],
+                },
                 projects: [
                     ("core".to_string(), StringOrVec::String(r".*\.Entities.*\.csproj$".to_string())),
                     ("io".to_string(), StringOrVec::String(r".*\.IO.*\.csproj$".to_string())),
@@ -93,7 +109,25 @@ impl Default for Config {
                 .iter()
                 .cloned()
                 .collect(),
-            },
+            }),
+            javascript: Some(Javascript {
+                pattern: "wildcard".to_string(),
+                case_sensitive: false,
+                exclude: Exclude {
+                    folders: vec!["node_modules".to_string()],
+                    projects: vec![],
+                    namespaces: vec![],
+                    files: vec![],
+                },
+                folders: [
+                    ("core".to_string(), StringOrVec::String("*Entities*".to_string())),
+                    ("io".to_string(), StringOrVec::String("*IO*".to_string())),
+                    ("usecase".to_string(), StringOrVec::String("*UseCase*".to_string())),
+                ]
+                .iter()
+                .cloned()
+                .collect(),
+            }),
         }
     }
 }
@@ -142,11 +176,43 @@ pub fn determine_layer(name: &str, layer_configs: &HashMap<String, StringOrVec>,
     "unknown".to_string()
 }
 
-pub fn should_exclude(path: &PathBuf, exclude_folders: &Vec<String>) -> bool {
-    for folder in exclude_folders {
-        if path.to_str().map_or(false, |p| p.contains(folder)) {
-            return true;
+fn matches_pattern(item: &str, patterns: &[String], pattern_type: &str, case_sensitive: bool) -> bool {
+    for pat in patterns {
+        let pat = if !case_sensitive { pat.to_lowercase() } else { pat.clone() };
+        match pattern_type {
+            "regex" => {
+                if let Ok(re) = Regex::new(&pat) {
+                    if re.is_match(item) {
+                        return true;
+                    }
+                }
+            }
+            "wildcard" => {
+                if let Ok(glob) = Pattern::new(&pat) {
+                    if glob.matches(item) {
+                        return true;
+                    }
+                }
+            }
+            _ => {}
         }
     }
     false
+}
+
+pub fn exclude_files_and_folders(path: &PathBuf, exclude: &Exclude, pattern_type: &str, case_sensitive: bool) -> bool {
+    let path_str = match path.to_str() {
+        Some(p) => p,
+        None => return false,
+    };
+    matches_pattern(path_str, &exclude.folders, pattern_type, case_sensitive) ||
+        matches_pattern(path_str, &exclude.files, pattern_type, case_sensitive)
+}
+
+pub fn exclude_namespaces(namespace: &str, exclude: &Exclude, pattern_type: &str, case_sensitive: bool) -> bool {
+    matches_pattern(namespace, &exclude.namespaces, pattern_type, case_sensitive)
+}
+
+pub fn exclude_projects(project_name: &str, exclude: &Exclude, pattern_type: &str, case_sensitive: bool) -> bool {
+    matches_pattern(project_name, &exclude.projects, pattern_type, case_sensitive)
 }

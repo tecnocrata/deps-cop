@@ -5,7 +5,7 @@ use std::path::Path;
 use walkdir::WalkDir;
 use regex::Regex;
 
-use crate::configuration::{determine_layer, should_exclude, Config};
+use crate::configuration::{determine_layer, exclude_files_and_folders, exclude_namespaces, Config};
 use crate::graph::{EdgeInfo, Node, NodeDependencies};
 use crate::stringsutils::RemoveBom;
 
@@ -15,11 +15,12 @@ impl NamespaceDependencyManager {
     pub fn collect_nodes(root_path: &Path, config: &Config) -> Result<Vec<Node>, Error> {
         let mut namespaces: HashMap<String, Node> = HashMap::new();
         let mut namespace_files = Vec::new();
+        let csharp_config = config.csharp.as_ref().unwrap();
 
         for entry in WalkDir::new(root_path) {
             let entry = entry?;
             let path = entry.path();
-            if should_exclude(&path.to_path_buf(), &config.csharp.exclude_folders) {
+            if exclude_files_and_folders(&path.to_path_buf(), &csharp_config.exclude, &csharp_config.pattern, csharp_config.case_sensitive) {
                 continue;
             }
             if path.extension().map_or(false, |e| e == "cs") {
@@ -31,41 +32,46 @@ impl NamespaceDependencyManager {
         let using_regex = Regex::new(r"^using\s+([\p{L}\p{N}_\.]+);?$").unwrap();
 
         for file in namespace_files {
-            // let filename = file.file_name().unwrap().to_str().unwrap();
-            // println!("Collecting nodes from file: {}", filename);
             let mut file = File::open(&file)?;
             let mut contents = String::new();
             file.read_to_string(&mut contents)?;
 
-            // Remove BOM
             contents = RemoveBom::remove_bom(&contents);
 
             for line in contents.lines() {
                 if let Some(captures) = namespace_regex.captures(line) {
-                    let current_namespace = captures.get(1).unwrap().as_str().to_string();
-                    if !namespaces.contains_key(&current_namespace) {
-                        let layer = determine_layer(&current_namespace, &config.csharp.namespaces, config.csharp.case_sensitive, &config.csharp.pattern);
-                        let color = config.get_color(&layer).unwrap_or(&"gray".to_string()).to_string();
-                        namespaces.insert(current_namespace.clone(), Node {
-                            id: current_namespace.clone(),
-                            name: current_namespace.clone(),
-                            node_type: "namespace".to_string(),
-                            layer,
-                            color,
-                        });
+                    if let Some(current_namespace) = captures.get(1).map(|m| m.as_str().to_string()) {
+                        if exclude_namespaces(&current_namespace, &csharp_config.exclude, &csharp_config.pattern, csharp_config.case_sensitive) {
+                            continue;
+                        }
+                        if !namespaces.contains_key(&current_namespace) {
+                            let layer = determine_layer(&current_namespace, &csharp_config.namespaces, csharp_config.case_sensitive, &csharp_config.pattern);
+                            let color = config.get_color(&layer).cloned().unwrap_or_else(|| "gray".to_string());
+                            namespaces.insert(current_namespace.clone(), Node {
+                                id: current_namespace.clone(),
+                                name: current_namespace.clone(),
+                                node_type: "namespace".to_string(),
+                                layer,
+                                color,
+                            });
+                        }
                     }
                 } else if let Some(captures) = using_regex.captures(line) {
-                    let namespace = captures.get(1).unwrap().as_str().to_string();
-                    if !namespaces.contains_key(&namespace) {
-                        let layer = determine_layer(&namespace, &config.csharp.namespaces, config.csharp.case_sensitive, &config.csharp.pattern);
-                        let color = config.get_color(&layer).unwrap_or(&"gray".to_string()).to_string();
-                        namespaces.insert(namespace.clone(), Node {
-                            id: namespace.clone(),
-                            name: namespace.clone(),
-                            node_type: "namespace".to_string(),
-                            layer,
-                            color,
-                        });
+                    if let Some(namespace) = captures.get(1).map(|m| m.as_str().to_string()) {
+                        if exclude_namespaces(&namespace, &csharp_config.exclude, &csharp_config.pattern, csharp_config.case_sensitive) {
+                            continue;
+                        }
+                        if !namespaces.contains_key(&namespace) {
+                            let layer = determine_layer(&namespace, &csharp_config.namespaces, csharp_config.case_sensitive, &csharp_config.pattern);
+                            let color = config.get_color(&layer).cloned().unwrap_or_else(|| "gray".to_string());
+                            namespaces.insert(namespace.clone(), Node {
+                                id: namespace.clone(),
+                                name: namespace.clone(),
+                                node_type: "namespace".to_string(),
+                                layer,
+                                color,
+                            });
+                        }
                     }
                 }
             }
@@ -88,11 +94,12 @@ impl NamespaceDependencyManager {
     pub fn find_dependencies(root_path: &Path, nodes: &[Node], config: &Config) -> Result<NodeDependencies, Error> {
         let mut node_dependencies: NodeDependencies = vec![Vec::new(); nodes.len()];
         let mut namespace_files = Vec::new();
+        let csharp_config = config.csharp.as_ref().unwrap();
 
         for entry in WalkDir::new(root_path) {
             let entry = entry?;
             let path = entry.path();
-            if should_exclude(&path.to_path_buf(), &config.csharp.exclude_folders) {
+            if exclude_files_and_folders(&path.to_path_buf(), &csharp_config.exclude, &csharp_config.pattern, csharp_config.case_sensitive) {
                 continue;
             }
             if path.extension().map_or(false, |e| e == "cs") {
@@ -108,31 +115,38 @@ impl NamespaceDependencyManager {
         let using_regex = Regex::new(r"^using\s+([\p{L}\p{N}_\.]+);?$").unwrap();
 
         for file in namespace_files {
-            // let filename = file.file_name().unwrap().to_str().unwrap();
-            // println!("Collecting dependencies from file: {}", filename);
             let mut file = File::open(&file)?;
             let mut contents = String::new();
             file.read_to_string(&mut contents)?;
 
-            // Remove BOM 
-            contents = crate::stringsutils::RemoveBom::remove_bom(&contents);
-            
+            contents = RemoveBom::remove_bom(&contents);
+
             let mut edges_info = Vec::new();
             let mut from_node_index: Option<usize> = None;
 
             for line in contents.lines() {
                 if let Some(captures) = namespace_regex.captures(line) {
-                    let parent_namespace = captures.get(1).unwrap().as_str().to_string();
-                    from_node_index = node_index_map.get(&parent_namespace).cloned();
+                    let parent_namespace = captures.get(1).map(|m| m.as_str().to_string());
+                    if let Some(parent_namespace) = parent_namespace {
+                        if exclude_namespaces(&parent_namespace, &csharp_config.exclude, &csharp_config.pattern, csharp_config.case_sensitive) {
+                            continue;
+                        }
+                        from_node_index = node_index_map.get(&parent_namespace).cloned();
+                    }
                 } else if let Some(captures) = using_regex.captures(line) {
-                    let child_namespace = captures.get(1).unwrap().as_str().to_string();
+                    let child_namespace = captures.get(1).map(|m| m.as_str().to_string());
 
-                    if let Some(&index) = node_index_map.get(&child_namespace) {
-                        let to_layer = &nodes[index].layer;
-                        let allowed_layers = config.global.rules.get(to_layer).cloned().unwrap_or_else(Vec::new);
-                        let ok = allowed_layers.contains(to_layer);
-                        let label = format!("to -> {}", nodes[index].name);
-                        edges_info.push(EdgeInfo { to: index, allowed: ok, label });
+                    if let Some(child_namespace) = child_namespace {
+                        if exclude_namespaces(&child_namespace, &csharp_config.exclude, &csharp_config.pattern, csharp_config.case_sensitive) {
+                            continue;
+                        }
+                        if let Some(&index) = node_index_map.get(&child_namespace) {
+                            let to_layer = &nodes[index].layer;
+                            let allowed_layers = config.global.rules.get(to_layer).cloned().unwrap_or_default();
+                            let ok = allowed_layers.contains(to_layer);
+                            let label = format!("to -> {}", nodes[index].name);
+                            edges_info.push(EdgeInfo { to: index, allowed: ok, label });
+                        }
                     }
                 }
             }
@@ -141,11 +155,13 @@ impl NamespaceDependencyManager {
                 for edge in &mut edges_info {
                     let parent_layer = &nodes[parent_index].layer;
                     let to_layer = &nodes[edge.to].layer;
-                    let allowed_layers = config.global.rules.get(parent_layer).cloned().unwrap_or_else(Vec::new);
+                    let allowed_layers = config.global.rules.get(parent_layer).cloned().unwrap_or_default();
                     edge.allowed = allowed_layers.contains(to_layer);
                 }
                 let current_edges = &node_dependencies[parent_index];
-                let new_edges: Vec<EdgeInfo> = edges_info.into_iter().filter(|edge| !current_edges.iter().any(|e| e.to == edge.to)).collect();
+                let new_edges: Vec<EdgeInfo> = edges_info.into_iter()
+                    .filter(|edge| !current_edges.iter().any(|e| e.to == edge.to))
+                    .collect();
                 node_dependencies[parent_index].extend(new_edges);
             }
         }
@@ -153,4 +169,3 @@ impl NamespaceDependencyManager {
         Ok(node_dependencies)
     }
 }
-

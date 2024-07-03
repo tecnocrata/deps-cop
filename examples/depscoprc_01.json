@@ -15,7 +15,12 @@
     "csharp": {
         "pattern": "regex",
         "case_sensitive": true,
-        "exclude_folders": ["bin", "obj"],
+        "exclude": {
+            "folders": ["bin","obj"],
+            "projects": [],
+            "namespaces": [],
+            "files":[]
+        },
         "projects": {
             "core": ".*\\.Entities.*\\.csproj$",
             "io": ".*\\.IO.*\\.csproj$",
