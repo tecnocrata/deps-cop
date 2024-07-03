@@ -198,3 +198,12 @@ pub fn exclude_namespaces(namespace: &str, exclude: &Exclude) -> bool {
     }
     false
 }
+
+pub fn exclude_projects(project_name: &str, exclude: &Exclude) -> bool {
+    for proj in &exclude.projects {
+        if project_name.contains(proj) {
+            return true;
+        }
+    }
+    false
+}
