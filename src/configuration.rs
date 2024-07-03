@@ -176,7 +176,7 @@ pub fn determine_layer(name: &str, layer_configs: &HashMap<String, StringOrVec>,
     "unknown".to_string()
 }
 
-pub fn should_exclude(path: &PathBuf, exclude: &Exclude) -> bool {
+pub fn exclude_files_and_folders(path: &PathBuf, exclude: &Exclude) -> bool {
     for folder in &exclude.folders {
         if path.to_str().map_or(false, |p| p.contains(folder)) {
             return true;
@@ -184,6 +184,15 @@ pub fn should_exclude(path: &PathBuf, exclude: &Exclude) -> bool {
     }
     for file in &exclude.files {
         if path.to_str().map_or(false, |p| p.contains(file)) {
+            return true;
+        }
+    }
+    false
+}
+
+pub fn exclude_namespaces(namespace: &str, exclude: &Exclude) -> bool {
+    for ns in &exclude.namespaces {
+        if namespace.contains(ns) {
             return true;
         }
     }

@@ -6,7 +6,7 @@ use path_slash::PathExt;
 use serde::Deserialize;
 use walkdir::WalkDir;
 
-use crate::configuration::{determine_layer, should_exclude, Config};
+use crate::configuration::{determine_layer, exclude_files_and_folders, Config};
 use crate::graph::{EdgeInfo, GraphDependencies, Node, NodeDependencies};
 use crate::stringsutils::RemoveBom;
 
@@ -41,7 +41,7 @@ impl GraphDependencies for ProjectDependencyManager {
         for entry in WalkDir::new(root_path) {
             let entry = entry?;
             let path = entry.path();
-            if should_exclude(&path.to_path_buf(), &config.csharp.as_ref().unwrap().exclude) {
+            if exclude_files_and_folders(&path.to_path_buf(), &config.csharp.as_ref().unwrap().exclude) {
                 continue;
             }
             if path.extension().map_or(false, |e| e == "csproj") {

@@ -5,7 +5,7 @@ use std::path::Path;
 use walkdir::WalkDir;
 use regex::Regex;
 
-use crate::configuration::{determine_layer, should_exclude, Config};
+use crate::configuration::{determine_layer, exclude_files_and_folders, exclude_namespaces, Config};
 use crate::graph::{EdgeInfo, Node, NodeDependencies};
 use crate::stringsutils::RemoveBom;
 
@@ -19,7 +19,7 @@ impl NamespaceDependencyManager {
         for entry in WalkDir::new(root_path) {
             let entry = entry?;
             let path = entry.path();
-            if should_exclude(&path.to_path_buf(), &config.csharp.as_ref().unwrap().exclude) {
+            if exclude_files_and_folders(&path.to_path_buf(), &config.csharp.as_ref().unwrap().exclude) {
                 continue;
             }
             if path.extension().map_or(false, |e| e == "cs") {
@@ -39,15 +39,17 @@ impl NamespaceDependencyManager {
 
             for line in contents.lines() {
                 if let Some(captures) = namespace_regex.captures(line) {
-                    let current_namespace = captures.get(1).map(|m| m.as_str().to_string());
-                    if let Some(namespace) = current_namespace {
-                        if !namespaces.contains_key(&namespace) {
+                    if let Some(current_namespace) = captures.get(1).map(|m| m.as_str().to_string()) {
+                        if exclude_namespaces(&current_namespace, &config.csharp.as_ref().unwrap().exclude) {
+                            continue;
+                        }
+                        if !namespaces.contains_key(&current_namespace) {
                             let csharp_config = config.csharp.as_ref().unwrap();
-                            let layer = determine_layer(&namespace, &csharp_config.namespaces, csharp_config.case_sensitive, &csharp_config.pattern);
+                            let layer = determine_layer(&current_namespace, &csharp_config.namespaces, csharp_config.case_sensitive, &csharp_config.pattern);
                             let color = config.get_color(&layer).cloned().unwrap_or_else(|| "gray".to_string());
-                            namespaces.insert(namespace.clone(), Node {
-                                id: namespace.clone(),
-                                name: namespace.clone(),
+                            namespaces.insert(current_namespace.clone(), Node {
+                                id: current_namespace.clone(),
+                                name: current_namespace.clone(),
                                 node_type: "namespace".to_string(),
                                 layer,
                                 color,
@@ -55,8 +57,10 @@ impl NamespaceDependencyManager {
                         }
                     }
                 } else if let Some(captures) = using_regex.captures(line) {
-                    let namespace = captures.get(1).map(|m| m.as_str().to_string());
-                    if let Some(namespace) = namespace {
+                    if let Some(namespace) = captures.get(1).map(|m| m.as_str().to_string()) {
+                        if exclude_namespaces(&namespace, &config.csharp.as_ref().unwrap().exclude) {
+                            continue;
+                        }
                         if !namespaces.contains_key(&namespace) {
                             let csharp_config = config.csharp.as_ref().unwrap();
                             let layer = determine_layer(&namespace, &csharp_config.namespaces, csharp_config.case_sensitive, &csharp_config.pattern);
@@ -95,7 +99,7 @@ impl NamespaceDependencyManager {
         for entry in WalkDir::new(root_path) {
             let entry = entry?;
             let path = entry.path();
-            if should_exclude(&path.to_path_buf(), &config.csharp.as_ref().unwrap().exclude) {
+            if exclude_files_and_folders(&path.to_path_buf(), &config.csharp.as_ref().unwrap().exclude) {
                 continue;
             }
             if path.extension().map_or(false, |e| e == "cs") {
@@ -123,11 +127,19 @@ impl NamespaceDependencyManager {
             for line in contents.lines() {
                 if let Some(captures) = namespace_regex.captures(line) {
                     let parent_namespace = captures.get(1).map(|m| m.as_str().to_string());
-                    from_node_index = parent_namespace.as_ref().and_then(|ns| node_index_map.get(ns).cloned());
+                    if let Some(parent_namespace) = parent_namespace {
+                        if exclude_namespaces(&parent_namespace, &config.csharp.as_ref().unwrap().exclude) {
+                            continue;
+                        }
+                        from_node_index = node_index_map.get(&parent_namespace).cloned();
+                    }
                 } else if let Some(captures) = using_regex.captures(line) {
                     let child_namespace = captures.get(1).map(|m| m.as_str().to_string());
 
                     if let Some(child_namespace) = child_namespace {
+                        if exclude_namespaces(&child_namespace, &config.csharp.as_ref().unwrap().exclude) {
+                            continue;
+                        }
                         if let Some(&index) = node_index_map.get(&child_namespace) {
                             let to_layer = &nodes[index].layer;
                             let allowed_layers = config.global.rules.get(to_layer).cloned().unwrap_or_default();
