@@ -1,6 +1,7 @@
 use std::{collections::HashMap, fs::File, path::PathBuf};
 use std::env;
 use clap::{App, Arg, AppSettings};
+use serde_json::{self, to_writer_pretty};
 
 mod graph;
 mod projects;
@@ -208,8 +209,12 @@ fn generate_default_config(folder: &PathBuf, languages: &str) -> Result<(), Box<
         config.javascript = None;
     }
 
+    // Clean up the configuration to remove any None values
+    let mut config_map = serde_json::to_value(&config)?.as_object().unwrap().clone();
+    config_map.retain(|_, v| !v.is_null());
+
     let config_path = folder.join("depscoprc.json");
     let file = File::create(config_path)?;
-    serde_json::to_writer_pretty(file, &config)?;
+    to_writer_pretty(file, &config_map)?;
     Ok(())
 }
