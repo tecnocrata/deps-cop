@@ -10,6 +10,10 @@
             "io": ["core", "io", "usecase"],
             "usecase": ["core", "usecase"],
             "core": ["core"]
+        },
+        "toggles": {
+            "show_valid_dependencies": true,
+            "show_invalid_dependencies": true
         }
     },
     "csharp": {
