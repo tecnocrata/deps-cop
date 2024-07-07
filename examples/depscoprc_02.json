@@ -9,6 +9,12 @@
             "io": ["core", "io", "usecase"],
             "usecase": ["core", "usecase"],
             "core": ["core"]
+        },
+        "toggles": {
+            "show_valid_dependencies": true,
+            "show_invalid_dependencies": true,
+            "show_recognized_nodes":true,
+            "show_unrecognized_nodes":true
         }
     },
     "csharp": {
