@@ -19,7 +19,7 @@ use static_output::{generate_html_output, generate_mermaid_diagram, generate_gra
 // Main entry point of the application
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let matches = App::new("Dependency Analyzer Cop")
-        .version("0.1.47")
+        .version("0.2.0")
         .mut_arg("version", |a| a.short('v'))  // It shows the version with -v
         .author("tecnocrata <")
         .about("Analyzes dependencies from project files")
@@ -101,13 +101,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let nodes = ProjectDependencyManager::collect_nodes(&root_path, &config)?;
             let project_dependencies = ProjectDependencyManager::find_dependencies(&nodes, &config)?;
 
-            generate_output(&matches, &nodes, &project_dependencies, &layers, &layer_dependencies)
+            generate_output(&matches, &nodes, &project_dependencies, &layers, &layer_dependencies, &config)
         }
         "csharp:namespaces" => {
             let nodes = NamespaceDependencyManager::collect_nodes(&root_path, &config)?;
             let namespace_dependencies = NamespaceDependencyManager::find_dependencies(&root_path, &nodes, &config)?;
 
-            generate_output(&matches, &nodes, &namespace_dependencies, &layers, &layer_dependencies)
+            generate_output(&matches, &nodes, &namespace_dependencies, &layers, &layer_dependencies, &config)
         }
         // "javascript:folders" => {
         //     let folder_dependencies = JavaScriptDependencyManager::find_folder_dependencies(&root_path, &config)?;
@@ -162,7 +162,7 @@ fn get_layers(config: &configuration::Config) -> Vec<Node> {
     layers
 }
 
-fn generate_output(matches: &clap::ArgMatches, nodes: &[Node], dependencies: &NodeDependencies, layers: &[Node], layer_dependencies: &NodeDependencies) -> Result<(), Box<dyn std::error::Error>> {
+fn generate_output(matches: &clap::ArgMatches, nodes: &[Node], dependencies: &NodeDependencies, layers: &[Node], layer_dependencies: &NodeDependencies, config: &Config) -> Result<(), Box<dyn std::error::Error>> {
     // display the number of elements that nodes and dependencies have
     println!("Nodes: {}", nodes.len());
     println!("Dependencies: {}", dependencies.len());
@@ -175,11 +175,11 @@ fn generate_output(matches: &clap::ArgMatches, nodes: &[Node], dependencies: &No
 
     if let Some(format) = matches.value_of("output") {
         if let Some(html_path) = matches.value_of("output-html") {
-            generate_html_output(&nodes, &dependencies, &layers, &layer_dependencies, html_path, format)?;
+            generate_html_output(&nodes, &dependencies, &layers, &layer_dependencies, html_path, format, &config.global.toggles)?;
         } else {
             match format {
                 "mermaid" => generate_mermaid_diagram(&nodes, &dependencies),
-                "graphviz" => generate_graphviz_diagram(&nodes, &dependencies, &layers, &layer_dependencies),
+                "graphviz" => generate_graphviz_diagram(&nodes, &dependencies, &layers, &layer_dependencies, &config.global.toggles),
                 "d3" => eprintln!("D3 output is only available for HTML output."),
                 _ => eprintln!("Invalid format. Use 'mermaid' or 'graphviz'."),
             }

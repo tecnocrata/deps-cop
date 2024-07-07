@@ -1,3 +1,4 @@
+
 # depscop - Dependency Analyzer
 
 `depscop` is a Rust-based command-line tool designed to analyze and report on the dependencies between C# project files (`*.csproj`). It offers insights into project structures, visualizes dependencies via diagrams, and detects circular dependencies to help maintain clean and manageable project architectures.
@@ -10,7 +11,7 @@
 - **Cycle Detection:** Identifies and reports circular dependencies among projects.
 - **Cross-Platform:** Runs on Windows, macOS, and Linux.
 
-## Installation from source code
+## Installation from Source Code
 
 To install `depscop`, you need Rust's package manager, Cargo. You can install Rust and Cargo via [rustup](https://rustup.rs/):
 
@@ -51,11 +52,13 @@ The executable will be available in `./target/release/`.
 
 ### Options
 
-- `--folder <PATH>`: Specifies the root directory to search for project files. Defaults to the current directory if not provided.
+- `--folder <PATH>`: Specifies the root directory to search for project files.
 - `--list`: Lists all detected projects.
-- `--output <FORMAT>`: Selects the output format (`mermaid` or `graphviz`) for the dependency graph.
+- `--output <FORMAT>`: Selects the output format (`d3`, `mermaid`, or `graphviz`) for the dependency graph.
 - `--output-html <PATH>`: Generates an HTML file at the specified path containing the visualized dependency graph. Requires `--output`.
 - `--detect-cycles`: Checks and reports if there are any circular dependencies.
+- `--analysis <TYPE>`: Specifies the analysis type (default: `csharp:projects`). Options include `csharp:projects` and `csharp:namespaces`.
+- `--generate-config <LANGUAGES>`: Generates the default configuration file for the specified languages (comma-separated, e.g., `csharp,javascript`).
 
 ## Contributing
 

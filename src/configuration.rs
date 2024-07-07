@@ -15,10 +15,19 @@ pub struct Rules {
 }
 
 #[derive(Serialize, Deserialize, Debug, Default)]
+pub struct Toggles {
+    pub show_valid_dependencies: bool,
+    pub show_invalid_dependencies: bool,
+    pub show_recognized_nodes: bool,
+    pub show_unrecognized_nodes: bool,
+}
+
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub struct Global {
     pub layers: Vec<String>,
     pub colors: HashMap<String, String>,
     pub rules: HashMap<String, Vec<String>>,
+    pub toggles: Toggles,
 }
 
 #[derive(Serialize, Deserialize, Debug, Default)]
@@ -83,6 +92,12 @@ impl Default for Config {
                 layers: vec!["core".to_string(), "io".to_string(), "usecase".to_string()],
                 colors: colors,
                 rules: rules,
+                toggles: Toggles {
+                    show_valid_dependencies: true,
+                    show_invalid_dependencies: true,
+                    show_recognized_nodes: true,
+                    show_unrecognized_nodes: true,
+                },
             },
             csharp: Some(Csharp {
                 pattern: "regex".to_string(),

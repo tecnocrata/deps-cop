@@ -2,14 +2,22 @@ use std::fs::File;
 use std::io::Write;
 use chrono::Local;
 
-use crate::graph::{Node, NodeDependencies};
+use crate::{configuration::Toggles, graph::{Node, NodeDependencies}};
 
-pub fn generate_html_output(nodes: &[Node], node_dependencies: &NodeDependencies, layers: &[Node], layer_dependencies: &NodeDependencies, path: &str, format: &str) -> Result<(), Box<dyn std::error::Error>> {
+pub fn generate_html_output(
+    nodes: &[Node],
+    node_dependencies: &NodeDependencies,
+    layers: &[Node],
+    layer_dependencies: &NodeDependencies,
+    path: &str,
+    format: &str,
+    toggles: &Toggles
+) -> Result<(), Box<dyn std::error::Error>> {
     println!("Generating HTML output at '{}' using format '{}'", path, format);
 
     let mut file = File::create(path)?;
     let now = Local::now();
-    
+
     writeln!(file, "<!DOCTYPE html>")?;
     writeln!(file, "<html lang=\"en\">")?;
     writeln!(file, "<head>")?;
@@ -40,10 +48,10 @@ pub fn generate_html_output(nodes: &[Node], node_dependencies: &NodeDependencies
     writeln!(file, "        <p>Everything was generated using Rust.</p>")?;
     writeln!(file, "        <img src=\"https://www.rust-lang.org/logos/rust-logo-blk.svg\" alt=\"Rust Logo\" class=\"rust-logo mx-auto\">")?;
     writeln!(file, "    </div>")?;
-    generate_script_code(&mut file, format, nodes, node_dependencies, layers, layer_dependencies)?;
+    generate_script_code(&mut file, format, nodes, node_dependencies, layers, layer_dependencies, toggles)?;
     writeln!(file, "</body>")?;
     writeln!(file, "</html>")?;
-    
+
     Ok(())
 }
 
@@ -76,16 +84,16 @@ fn generate_style_content_d3(file: &mut File) -> Result<(), Box<dyn std::error::
     Ok(())
 }
 
-fn generate_script_code(file: &mut File, format: &str, nodes: &[Node], node_dependencies: &NodeDependencies, layers: &[Node], layer_dependencies: &NodeDependencies) -> Result<(), Box<dyn std::error::Error>> {
+fn generate_script_code(file: &mut File, format: &str, nodes: &[Node], node_dependencies: &NodeDependencies, layers: &[Node], layer_dependencies: &NodeDependencies, toggles: &Toggles) -> Result<(), Box<dyn std::error::Error>> {
     match format {
-        "graphviz" => generate_script_code_graphviz(file, nodes, node_dependencies, layers, layer_dependencies)?,
+        "graphviz" => generate_script_code_graphviz(file, nodes, node_dependencies, layers, layer_dependencies, toggles)?,
         "d3" => generate_script_code_d3(file, nodes, node_dependencies)?,
         _ => (),
     }
     Ok(())
 }
 
-fn generate_script_code_graphviz(file: &mut File, nodes: &[Node], node_dependencies: &NodeDependencies, layers: &[Node], layer_dependencies: &NodeDependencies) -> Result<(), Box<dyn std::error::Error>> {
+fn generate_script_code_graphviz(file: &mut File, nodes: &[Node], node_dependencies: &NodeDependencies, layers: &[Node], layer_dependencies: &NodeDependencies, toggles: &Toggles) -> Result<(), Box<dyn std::error::Error>> {
     writeln!(file, "<script>")?;
     writeln!(file, "    var viz = new Viz();")?;
     writeln!(file, "    var graphvizData = `")?;
@@ -93,13 +101,15 @@ fn generate_script_code_graphviz(file: &mut File, nodes: &[Node], node_dependenc
     writeln!(file, "\tnode [color=grey, style=filled];")?;
     writeln!(file, "\tnode [fontname=\"Verdana\", size=\"30,30\"];")?;
     for (index, node) in nodes.iter().enumerate() {
-        writeln!(file, "    P{} [label=\"{}\", style=filled, fillcolor=\"{}\"]", index + 1, node.name, node.color)?;
+        if (toggles.show_recognized_nodes && node.layer != "unknown") || (toggles.show_unrecognized_nodes && node.layer == "unknown") {
+            writeln!(file, "    P{} [label=\"{}\", style=filled, fillcolor=\"{}\"]", index + 1, node.name, node.color)?;
+        }
     }
     for (index, deps) in node_dependencies.iter().enumerate() {
         for dep in deps {
-            if dep.allowed {
+            if dep.allowed && toggles.show_valid_dependencies {
                 writeln!(file, "    P{} -> P{}", index + 1, dep.to + 1)?;
-            } else {
+            } else if !dep.allowed && toggles.show_invalid_dependencies {
                 writeln!(file, "    P{} -> P{} [color=\"red\" style=dotted penwidth=2]", index + 1, dep.to + 1)?;
             }
         }
@@ -149,7 +159,6 @@ fn generate_script_code_graphviz(file: &mut File, nodes: &[Node], node_dependenc
     writeln!(file, "</script>")?;
     Ok(())
 }
-
 
 fn generate_script_code_d3(file: &mut File, nodes: &[Node], node_dependencies: &NodeDependencies) -> Result<(), Box<dyn std::error::Error>>  {
     writeln!(file, "<script src=\"https://d3js.org/d3.v6.min.js\"></script>")?;
@@ -268,6 +277,7 @@ fn generate_body_content(file: &mut File, format: &str, nodes: &[Node], node_dep
     }
     Ok(())
 }
+
 fn generate_body_content_graphviz(file: &mut File, _nodes: &[Node], _node_dependencies: &NodeDependencies) -> Result<(), Box<dyn std::error::Error>> {
     writeln!(file, "            <div id=\"graph-container\">")?;
     writeln!(file, "                <div id=\"graph\"></div>")?;
@@ -311,18 +321,26 @@ pub fn generate_mermaid_diagram(nodes: &[Node], node_dependencies: &NodeDependen
 }
 
 /// Generates a Graphviz diagram based on project dependencies
-pub fn generate_graphviz_diagram(nodes: &[Node], node_dependencies: &NodeDependencies, layers: &[Node], layer_dependencies: &NodeDependencies) {
+pub fn generate_graphviz_diagram(
+nodes: &[Node],
+node_dependencies: &NodeDependencies,
+layers: &[Node],
+layer_dependencies: &NodeDependencies,
+toggles: &Toggles
+) {
     println!("digraph G {{");
     println!("    node [color=grey, style=filled];");
     println!("    node [fontname=\"Verdana\", size=\"30,30\"];");
     for (index, node) in nodes.iter().enumerate() {
-        println!("    P{} [label=\"{}\", style=filled, fillcolor=\"{}\"]", index + 1, node.name, node.color);
+        if (toggles.show_recognized_nodes && node.layer != "unknown") || (toggles.show_unrecognized_nodes && node.layer == "unknown") {
+            println!("    P{} [label=\"{}\", style=filled, fillcolor=\"{}\"]", index + 1, node.name, node.color);
+        }
     }
     for (index, deps) in node_dependencies.iter().enumerate() {
         for dep in deps {
-            if dep.allowed {
+            if dep.allowed && toggles.show_valid_dependencies {
                 println!("    P{} -> P{}", index + 1, dep.to + 1);
-            } else {
+            } else if !dep.allowed && toggles.show_invalid_dependencies {
                 println!("    P{} -> P{} [color=\"red\" style=dashed penwidth=2]", index + 1, dep.to + 1);
             }
         }
