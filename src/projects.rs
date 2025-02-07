@@ -59,7 +59,7 @@ impl GraphDependencies for ProjectDependencyManager {
                             path.display(),
                             err
                         );
-                        continue; 
+                        continue;
                     }
                 };
 
@@ -120,7 +120,7 @@ impl GraphDependencies for ProjectDependencyManager {
             for item_group in &csproj_data.item_groups {
                 for project_reference in &item_group.project_references {
                     let normalized_path = if cfg!(target_os = "windows") {
-                        Path::new(&project_reference.include).to_slash_lossy()
+                        Path::new(&project_reference.include).to_slash_lossy().into_owned()
                     } else {
                         project_reference.include.replace("\\", "/")
                     };
