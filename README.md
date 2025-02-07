@@ -46,22 +46,92 @@ The executable will be available in `./target/release/`.
 
 ### Basic Commands
 
-- **Listing Projects:**
-  ```bash
-  ./depscop --folder path/to/solution --list
-  ```
-- **Generating a Dependency Graph:**
-  ```bash
-  ./depscop --folder path/to/solution --output mermaid
-  ```
-- **Creating HTML Output:**
-  ```bash
-  ./depscop --folder path/to/solution --output graphviz --output-html path/to/output.html
-  ```
-- **Detecting Circular Dependencies:**
-  ```bash
-  ./depscop --folder path/to/solution --detect-cycles
-  ```
+```bash
+# Analyze C# project dependencies
+./depscop --folder ./src --analysis csharp:projects --list
+
+# Analyze C# namespace dependencies
+./depscop --folder ./src --analysis csharp:namespaces --output graphviz
+
+# Generate interactive visualization
+./depscop --folder ./src --output d3 --output-html dependencies.html
+
+# Check for circular dependencies
+./depscop --folder ./src --detect-cycles
+
+# Generate default configuration
+./depscop --generate-config csharp,javascript
+```
+
+### Configuration File (depscoprc.json)
+
+The tool uses a configuration file to customize its behavior. Generate a default one using:
+
+```bash
+./depscop --generate-config csharp
+```
+
+Example configuration:
+
+```json
+{
+  "global": {
+    "layers": ["core", "io", "usecase"],
+    "colors": {
+      "core": "#FBFDB8",
+      "io": "#A7D7FD",
+      "usecase": "#FEA29C"
+    },
+    "rules": {
+      "core": ["core"],
+      "io": ["core", "io", "usecase"],
+      "usecase": ["core", "usecase"]
+    },
+    "toggles": {
+      "show_valid_dependencies": true,
+      "show_invalid_dependencies": true,
+      "show_recognized_nodes": true,
+      "show_unrecognized_nodes": true
+    }
+  },
+  "csharp": {
+    "pattern": "regex",
+    "case_sensitive": true,
+    "exclude": {
+      "folders": ["bin", "obj"],
+      "projects": [],
+      "namespaces": [],
+      "files": []
+    },
+    "projects": {
+      "core": ".*\\.Entities.*\\.csproj$",
+      "io": ".*\\.IO.*\\.csproj$",
+      "usecase": ".*\\.UseCases.*\\.csproj$"
+    },
+    "namespaces": {
+      "core": ".*\\.Entities(\\..*)?$",
+      "io": ".*\\.IO(\\..*)?$",
+      "usecase": ".*\\.UseCases(\\..*)?$"
+    }
+  }
+}
+```
+
+### Advanced Examples
+
+```bash
+# Generate HTML visualization with Graphviz
+./depscop --folder ./src --output graphviz --output-html deps.html
+
+# Analyze namespaces and detect cycles
+./depscop --folder ./src --analysis csharp:namespaces --detect-cycles
+
+# List projects with detailed dependency information
+./depscop --folder ./src --analysis csharp:projects --list
+
+# Generate interactive D3 visualization
+./depscop --folder ./src --output d3 --output-html interactive.html
+```
 
 ### Options
 
