@@ -1,15 +1,28 @@
-
 # depscop - Dependency Analyzer
 
-`depscop` is a Rust-based command-line tool designed to analyze and report on the dependencies between C# project files (`*.csproj`). It offers insights into project structures, visualizes dependencies via diagrams, and detects circular dependencies to help maintain clean and manageable project architectures.
+`depscop` is a Rust-based command-line tool designed to analyze dependencies in software projects. While it primarily focuses on C# projects, analyzing both project references (\*.csproj) and namespace dependencies, it's designed to be extensible to other languages and dependency types.
 
 ## Features
 
-- **Project Listing:** Displays all detected C# project files.
-- **Dependency Visualization:** Generates dependency graphs in Mermaid or Graphviz format.
-- **HTML Output:** Generates HTML pages incorporating the visual dependency graphs.
-- **Cycle Detection:** Identifies and reports circular dependencies among projects.
-- **Cross-Platform:** Runs on Windows, macOS, and Linux.
+- **Multiple Analysis Types:**
+  - C# Project Dependencies (\*.csproj files)
+  - C# Namespace Dependencies
+  - (Future support planned for JavaScript folder dependencies)
+- **Flexible Configuration:**
+  - Layer-based architecture validation
+  - Customizable color schemes
+  - Configurable dependency rules
+  - Pattern-based project/namespace recognition (regex or wildcard)
+- **Visualization Options:**
+  - Interactive D3.js graphs
+  - Mermaid diagrams
+  - Graphviz diagrams
+  - HTML output with pan and zoom capabilities
+- **Analysis Tools:**
+  - Dependency cycle detection
+  - Valid/invalid dependency highlighting
+  - Layer rule validation
+- **Cross-Platform:** Works on Windows, macOS, and Linux
 
 ## Installation from Source Code
 
