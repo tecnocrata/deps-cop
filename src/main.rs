@@ -3,18 +3,20 @@ use std::env;
 use clap::{Parser, ValueEnum};
 use serde_json::{self, to_writer_pretty};
 
-mod graph;
-mod projects;
-mod static_output;
-mod configuration;
-mod namespaces;
-mod stringsutils;
+mod core;
+mod config;
+mod analyzers;
+mod output;
+mod utils;
 
-use configuration::{load_config, Config};
-use namespaces::NamespaceDependencyManager;
-use graph::{detect_cycles, GraphDependencies, Node, NodeDependencies};
-use projects::ProjectDependencyManager;
-use static_output::{generate_html_output, generate_mermaid_diagram, generate_graphviz_diagram, display_graph_information};
+use config::loader::load_config;
+use config::types::Config;
+use analyzers::csharp::namespace::NamespaceDependencyManager;
+use core::analysis::{detect_cycles, GraphDependencies};
+use core::node::Node;
+use core::dependencies::NodeDependencies;
+use analyzers::csharp::project::ProjectDependencyManager;
+use output::static_output::{generate_html_output, generate_mermaid_diagram, generate_graphviz_diagram, display_graph_information};
 
 #[derive(Parser)]
 #[command(
@@ -31,19 +33,8 @@ struct Cli {
         short = 'f',
         long = "folder",
         value_name = "PATH",
-        // required_unless_present = "generate_config"
     )]
     path: String,
-
-    // /// Output format to use (graphviz or d3)
-    // #[arg(
-    //     short = 't',
-    //     long,
-    //     value_name = "FORMAT",
-    //     default_value = "graphviz",
-    //     requires = "path"
-    // )]
-    // format: OutputFormat,
 
     /// Type of analysis to perform
     #[arg(
@@ -130,7 +121,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     let config = load_config(&root_path);
-    // println!("Configuration: {:#?}", config);
 
     let analysis = cli.analysis.as_str();
     let layers: Vec<Node> = get_layers(&config);
@@ -149,11 +139,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             generate_output(&cli, &nodes, &namespace_dependencies, &layers, &layer_dependencies, &config)
         }
-        // "javascript:folders" => {
-        //     let folder_dependencies = JavaScriptDependencyManager::find_folder_dependencies(&root_path, &config)?;
-
-        //     generate_output(&matches, &folder_dependencies.nodes, &folder_dependencies.dependencies)?;
-        // }
         _ => {
             eprintln!("Unsupported analysis type. Please specify 'csharp:projects', 'csharp:namespaces', or 'javascript:folders'.");
             Err(Box::from("Unsupported analysis type"))
@@ -169,7 +154,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 }
 
-fn get_layer_dependencies(layers: &[Node], rules: &HashMap<String, Vec<String>>) -> Vec<Vec<graph::EdgeInfo>> {
+fn get_layer_dependencies(layers: &[Node], rules: &HashMap<String, Vec<String>>) -> Vec<Vec<core::dependencies::EdgeInfo>> {
     // Precompute layer indices for quick lookup
     let layer_indices: HashMap<&String, usize> = layers.iter().enumerate()
         .map(|(index, layer)| (&layer.id, index))
@@ -180,12 +165,12 @@ fn get_layer_dependencies(layers: &[Node], rules: &HashMap<String, Vec<String>>)
             let to_layer_index = *layer_indices.get(layer_rule).unwrap();
             let to_layer = &layers[to_layer_index];
             let label = format!("{} -> {}", layer.name, to_layer.name);
-            graph::EdgeInfo { to: to_layer_index, allowed: true, label }
+            core::dependencies::EdgeInfo { to: to_layer_index, allowed: true, label }
         }).collect()
     }).collect()
 }
 
-fn get_layers(config: &configuration::Config) -> Vec<Node> {
+fn get_layers(config: &config::types::Config) -> Vec<Node> {
     let mut layers = Vec::new();
     for layer in &config.global.layers {
         layers.push(Node {
